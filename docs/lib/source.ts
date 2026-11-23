@@ -1,0 +1,37 @@
+import type { InferPageType } from 'fumadocs-core/source'
+import { tablerIconsPlugin } from './docsIcons'
+import { loader } from 'fumadocs-core/source'
+import { changelog as changelogEntries, docs, posts } from 'fumadocs-mdx:collections/server'
+import { toFumadocsSource } from 'fumadocs-mdx/runtime/server'
+
+// See https://fumadocs.dev/docs/headless/source-api for more info
+export const source = loader({
+  baseUrl: '/docs',
+  source: docs.toFumadocsSource(),
+  // the app's own Tabler icons for the sidebar - see lib/docsIcons.ts
+  plugins: [tablerIconsPlugin()],
+})
+
+export const changelog = loader(toFumadocsSource(changelogEntries, []), {
+  baseUrl: '/changelog',
+})
+
+// Every post, drafts included - use `getPublishedPosts()` from `lib/blog.ts` for anything public.
+export const blog = loader(toFumadocsSource(posts, []), {
+  baseUrl: '/blog',
+})
+
+export function getPageImage(page: InferPageType<typeof source>) {
+  const segments = [...page.slugs, 'image.png']
+
+  return {
+    segments,
+    url: `/og/docs/${segments.join('/')}`,
+  }
+}
+
+export async function getLLMText(page: InferPageType<typeof source>) {
+  const processed = await page.data.getText('processed')
+
+  return `${processed}`
+}

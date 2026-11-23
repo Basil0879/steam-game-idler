@@ -1,0 +1,56 @@
+import type { AutoIdleEntry } from '../types'
+import { TbX } from 'react-icons/tb'
+import { Switch } from '@heroui/react'
+import { GamePosterAction, GamePosterCard } from '@/shared/components/GamePosterCard'
+
+interface AutoIdleListCardProps {
+  game: AutoIdleEntry
+  isPending: boolean
+  onToggleEnabled: () => void
+  onRemove: () => void
+}
+
+// Used in the "Queue" tab - an enable/disable switch and a remove button (the whole card is draggable to reorder - see SortableAutoIdleListCard, which wraps this). The one
+// real difference from FavoriteListCard/AchievementUnlockerListCard: this queue's entries carry
+// their own `enabled` flag (dimmed when off, matching `main`'s `GameCard`'s `opacity-50`
+// treatment for a disabled auto-idle entry), so a game can stay queued without actually being
+// started on next launch/"Start Now".
+export const AutoIdleListCard = ({
+  game,
+  isPending,
+  onToggleEnabled,
+  onRemove,
+}: AutoIdleListCardProps) => {
+  return (
+    <GamePosterCard
+      showStats
+      actions={
+        <>
+          <Switch
+            aria-label={`Toggle auto-idle for ${game.name}`}
+            isDisabled={isPending}
+            isSelected={game.enabled}
+            onChange={onToggleEnabled}
+          >
+            <Switch.Content>
+              <Switch.Control>
+                <Switch.Thumb />
+              </Switch.Control>
+            </Switch.Content>
+          </Switch>
+          <GamePosterAction
+            aria-label={`Remove ${game.name}`}
+            className='ml-auto'
+            isPending={isPending}
+            onPress={onRemove}
+          >
+            <TbX fontSize={16} />
+          </GamePosterAction>
+        </>
+      }
+      appId={game.appId}
+      isDimmed={!game.enabled}
+      name={game.name}
+    />
+  )
+}

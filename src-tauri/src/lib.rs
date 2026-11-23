@@ -1,0 +1,397 @@
+use tauri::{
+    utils::config::{AppDirectoriesOverride, AppDirectoryOverrides},
+    Listener, Manager,
+};
+use tauri_plugin_window_state::StateFlags;
+
+mod achievement_unlocker;
+mod achievements;
+mod async_utils;
+mod auto_idle;
+mod card_farming;
+mod credential_store;
+mod customization;
+mod debug;
+mod embedded_api_key;
+mod error;
+mod favorites;
+mod free_games;
+mod fs_utils;
+mod game_art;
+mod games;
+mod idling;
+mod inventory;
+mod legacy_install;
+mod legacy_migration;
+mod local_steam;
+mod logging;
+mod max_playtime;
+mod platform;
+mod settings;
+mod steam_agent;
+mod steam_community;
+mod steam_utility_exe;
+mod steam_web_api;
+mod subscription;
+mod tray;
+mod updater;
+mod zoom;
+
+/// The elevated old-install cleanup, dispatched by `main()` before Tauri starts - see
+/// `legacy_install::elevated`.
+#[cfg(windows)]
+pub use legacy_install::run_elevated_task_from_args;
+
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+    let mut context = tauri::generate_context!();
+
+    // Portable builds keep window position/size next to the binary instead of AppData, matching the
+    // rest of the app's portable-mode file placement (see `platform::cache_dir`). Only `config` is
+    // overridden because that's the one directory `tauri-plugin-window-state` reads and nothing else
+    // here uses: `local_data` is the WebView2 profile, so a whole-root override would move it and lose
+    // portable users' localStorage (including `licenseKey`). A relative path resolves against the
+    // binary's directory, not the working directory, so it holds when launched from elsewhere.
+    if platform::is_portable() {
+        context.config_mut().app.app_directories_override =
+            Some(AppDirectoriesOverride::Directories(AppDirectoryOverrides {
+                config: Some(".".into()),
+                ..Default::default()
+            }));
+    }
+
+    tauri::Builder::default()
+        // Must be registered first so it can intercept startup before any other plugin/setup
+        // runs on a second launch attempt (Tauri's own recommendation for this plugin).
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            tracing::info!(
+                "single-instance: second launch attempt intercepted, focusing existing window"
+            );
+            if let Some(window) = app.get_webview_window("main") {
+                if let Err(e) = window.show() {
+                    tracing::warn!(error = %e, "single-instance: failed to show main window");
+                }
+                if let Err(e) = window.set_focus() {
+                    tracing::warn!(error = %e, "single-instance: failed to focus main window");
+                }
+            }
+        }))
+        .plugin(
+            tauri_plugin_window_state::Builder::new()
+                .with_state_flags(
+                    StateFlags::SIZE
+                        | StateFlags::POSITION
+                        | StateFlags::MAXIMIZED
+                        | StateFlags::DECORATIONS
+                        | StateFlags::FULLSCREEN,
+                )
+                .build(),
+        )
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            None,
+        ))
+        .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
+        .manage(steam_agent::AgentManager::new())
+        .manage(idling::IdlingManager::new())
+        .manage(idling::claims::IdleClaimsRegistry::new())
+        .manage(idling::auto_stop::IdleAutoStopRegistry::new())
+        .manage(card_farming::CardFarmingManager::new())
+        .manage(achievement_unlocker::AchievementUnlockerManager::new())
+        .manage(achievements::library_run::LibraryRunRegistry::new())
+        .manage(local_steam::commands::SteamStatusMonitor::new())
+        .manage(tray::TrayStrings::default())
+        .setup(|app| {
+            let log_guard = logging::init(app.handle())?;
+            app.manage(log_guard);
+            logging::purge_old_logs(app.handle());
+            platform::log_runtime_environment();
+            // Must run before the webview loads (see legacy_migration's doc comment) - before
+            // setup_window/tray so nothing else touches the cache directory first.
+            let migrated = legacy_migration::run(app.handle());
+            app.manage(legacy_migration::LegacyMigrationState(migrated));
+            legacy_install::commands::on_startup(app.handle());
+            setup_window(app.handle())?;
+            tray::setup(app.handle())?;
+            tauri::async_runtime::spawn(max_playtime::enforcement::run(app.handle().clone()));
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
+            steam_agent::commands::agent_login,
+            steam_agent::commands::agent_begin_qr_login,
+            steam_agent::commands::agent_cancel_qr_login,
+            steam_agent::commands::agent_submit_guard_code,
+            steam_agent::commands::agent_login_with_token,
+            steam_agent::commands::agent_logout,
+            steam_agent::commands::get_agent_playing_sessions,
+            steam_agent::commands::agent_get_presence_settings,
+            steam_agent::commands::agent_set_presence_settings,
+            steam_agent::commands::agent_get_ownership_settings,
+            steam_agent::commands::agent_set_ownership_settings,
+            platform::is_portable,
+            platform::is_dev,
+            platform::current_os,
+            platform::can_auto_update,
+            platform::needs_reduced_motion,
+            updater::kill_all_steam_utility_processes,
+            local_steam::commands::get_users,
+            local_steam::commands::get_user_summary,
+            local_steam::commands::get_user_summary_cache,
+            local_steam::commands::delete_user_summary_file,
+            local_steam::commands::is_steam_running,
+            local_steam::commands::start_steam_status_monitor,
+            local_steam::commands::anti_away,
+            local_steam::commands::launch_steam,
+            local_steam::commands::prepare_steam_account_switch,
+            local_steam::commands::switch_steam_account,
+            games::commands::get_owned_games,
+            games::commands::get_owned_games_cache,
+            games::commands::delete_owned_games_cache,
+            games::commands::resolve_account_steam_id,
+            idling::commands::get_idle_state,
+            idling::commands::get_family_locked_games,
+            idling::commands::toggle_manual_idle,
+            idling::commands::stop_all_idling,
+            idling::commands::get_idle_claims,
+            idling::commands::stop_owner_idling,
+            idling::commands::get_idling_global_max_idle_time,
+            idling::commands::set_idling_global_max_idle_time,
+            idling::commands::get_idling_max_idle_time,
+            idling::commands::set_idling_max_idle_time,
+            idling::commands::get_idling_customized_app_ids,
+            max_playtime::commands::get_global_max_playtime,
+            max_playtime::commands::set_global_max_playtime,
+            max_playtime::commands::get_max_playtime,
+            max_playtime::commands::set_max_playtime,
+            max_playtime::commands::get_max_playtime_customized_app_ids,
+            favorites::commands::get_favorites,
+            favorites::commands::add_favorite,
+            favorites::commands::remove_favorite,
+            favorites::commands::set_favorites_order,
+            auto_idle::commands::get_auto_idle_list,
+            auto_idle::commands::add_to_auto_idle_list,
+            auto_idle::commands::remove_from_auto_idle_list,
+            auto_idle::commands::set_auto_idle_list_order,
+            auto_idle::commands::set_auto_idle_enabled,
+            auto_idle::commands::start_auto_idle_games,
+            game_art::resolve_game_art,
+            free_games::commands::get_free_games,
+            free_games::commands::claim_free_game,
+            free_games::commands::get_free_games_settings,
+            free_games::commands::set_free_games_settings,
+            free_games::commands::ensure_free_games_store_session,
+            free_games::commands::clear_free_games_store_session,
+            settings::commands::get_settings,
+            settings::commands::validate_steam_web_api_key,
+            settings::commands::set_steam_web_api_key,
+            settings::commands::set_anti_away,
+            settings::commands::set_start_minimized,
+            settings::commands::set_close_to_tray,
+            settings::commands::set_auto_update_games_list,
+            settings::commands::set_free_game_notifications,
+            settings::commands::set_theme,
+            settings::commands::set_font,
+            settings::commands::set_disable_tooltips,
+            customization::commands::set_custom_background,
+            customization::commands::clear_custom_background,
+            customization::commands::get_custom_background_data_url,
+            achievements::commands::get_achievement_data,
+            achievements::commands::set_achievement,
+            achievements::commands::set_achievements,
+            achievements::commands::unlock_all_achievements,
+            achievements::commands::lock_all_achievements,
+            achievements::commands::set_all_owned_games_achievements,
+            achievements::commands::update_stats,
+            achievements::commands::reset_all_stats,
+            subscription::get_device_fingerprint,
+            subscription::quit_app,
+            card_farming::commands::get_games_with_drops,
+            card_farming::commands::start_farming,
+            card_farming::commands::stop_farming,
+            card_farming::commands::get_farming_state,
+            card_farming::commands::get_card_farming_settings,
+            card_farming::commands::set_card_farming_settings,
+            card_farming::commands::get_card_farming_whitelist,
+            card_farming::commands::add_to_card_farming_whitelist,
+            card_farming::commands::remove_from_card_farming_whitelist,
+            card_farming::commands::clear_card_farming_whitelist,
+            card_farming::commands::get_card_farming_blacklist,
+            card_farming::commands::add_to_card_farming_blacklist,
+            card_farming::commands::remove_from_card_farming_blacklist,
+            card_farming::commands::clear_card_farming_blacklist,
+            achievement_unlocker::commands::get_achievement_unlocker_queue,
+            achievement_unlocker::commands::add_to_achievement_unlocker_queue,
+            achievement_unlocker::commands::remove_from_achievement_unlocker_queue,
+            achievement_unlocker::commands::set_achievement_unlocker_queue_order,
+            achievement_unlocker::commands::get_achievement_unlocker_settings,
+            achievement_unlocker::commands::set_achievement_unlocker_settings,
+            achievement_unlocker::commands::get_achievement_unlocker_max_unlocks,
+            achievement_unlocker::commands::set_achievement_unlocker_max_unlocks,
+            achievement_unlocker::commands::get_achievement_unlocker_customized_app_ids,
+            achievement_unlocker::commands::get_achievement_order,
+            achievement_unlocker::commands::save_achievement_order,
+            achievement_unlocker::commands::import_achievement_timings,
+            achievement_unlocker::commands::start_achievement_unlocker,
+            achievement_unlocker::commands::update_achievement_unlocker_concurrency,
+            achievement_unlocker::commands::stop_achievement_unlocker,
+            achievement_unlocker::commands::get_achievement_unlocker_state,
+            inventory::commands::get_inventory,
+            inventory::commands::get_inventory_cache,
+            inventory::commands::delete_inventory_cache,
+            inventory::commands::get_item_price,
+            inventory::commands::list_items,
+            inventory::commands::update_item_price_data,
+            inventory::commands::remove_market_listings,
+            inventory::commands::get_inventory_settings,
+            inventory::commands::set_inventory_settings,
+            steam_community::commands::get_steam_credentials,
+            steam_community::commands::set_steam_credentials,
+            steam_community::commands::validate_and_save_steam_credentials,
+            steam_community::commands::clear_steam_credentials,
+            steam_community::commands::acquire_and_save_steam_credentials,
+            debug::commands::get_log_file_path,
+            debug::commands::get_settings_file_path,
+            debug::commands::get_log_lines,
+            debug::commands::clear_log_file,
+            debug::commands::clear_all_cache_files,
+            debug::commands::get_system_info,
+            debug::commands::reset_settings,
+            legacy_migration::was_legacy_migration_performed,
+            legacy_install::commands::get_legacy_install_status,
+            legacy_install::commands::remove_legacy_install,
+            legacy_install::commands::dismiss_legacy_install_prompt,
+            logging::log_frontend_event,
+            zoom::set_zoom,
+            tray::update_tray_menu,
+        ])
+        .build(context)
+        .expect("error while building tauri application")
+        .run(|app_handle, event| {
+            // Without this, quitting the app (tray Quit, titlebar close with close-to-tray off, or
+            // a forced quit on subscription revocation) leaves CLI-mode `SteamUtility.exe idle`
+            // children and agent-mode daemon sessions running as orphans: `AppHandle::exit` tears
+            // down the process via `std::process::exit`, which runs no destructors, so the tracked
+            // `Child`'s `kill_on_drop` never fires. Reuses the same cleanup already wired into the
+            // pre-update-install and sign-out paths (`updater::kill_all_steam_utility_processes`)
+            // rather than a separate exit-only kill list, and blocks the exit on it completing -
+            // mirrors `main`'s `RunEvent::Exit => kill_tracked_processes_blocking()`.
+            if let tauri::RunEvent::Exit = event {
+                tauri::async_runtime::block_on(async {
+                    if let Err(err) = updater::kill_all_steam_utility_processes(
+                        app_handle.state(),
+                        app_handle.state(),
+                        app_handle.state(),
+                    )
+                    .await
+                    {
+                        tracing::warn!(?err, "exit: failed to kill SteamUtility.exe processes");
+                    }
+                });
+            }
+        });
+}
+
+/// Builds the main window from `tauri.conf.json`'s single `app.windows[]` entry, which is marked
+/// `"create": false` so Tauri doesn't auto-create it before `setup()` runs. It's built here instead
+/// because `on_new_window` can only be attached at build time, never to an existing window.
+///
+/// Without a new-window handler, wry silently swallows every new-window request (a
+/// `target="_blank"` link or `window.open`) and nothing happens. That's what made the Chatway
+/// help-desk widget's Discord/GitHub channel buttons dead: they call `window.open` from inside
+/// Chatway's own cross-origin iframe, so the app's frontend can't intercept them, and only the
+/// native webview layer ever sees them. Every such request now opens in the user's default browser
+/// instead. The app never wants a second in-app webview window, so the in-app request is always
+/// denied. Only http(s) is forwarded, so a page in the webview can't use this to launch an
+/// arbitrary protocol handler.
+///
+/// Plain anchor clicks inside a cross-origin iframe (links in Chatway chat messages, links in the
+/// `ChangelogModal` release notes) never raise a new-window request at all, though `window.open`
+/// from the same iframe does. `iframe_link_bridge.js` rewrites those clicks into `window.open`
+/// calls so they reach this handler too; see that file for details.
+fn build_main_window(app_handle: &tauri::AppHandle) -> tauri::Result<tauri::WebviewWindow> {
+    use tauri::webview::NewWindowResponse;
+    use tauri_plugin_opener::OpenerExt;
+
+    let config = app_handle
+        .config()
+        .app
+        .windows
+        .first()
+        .cloned()
+        .expect("tauri.conf.json must define the main window");
+
+    let opener_handle = app_handle.clone();
+    tauri::WebviewWindowBuilder::from_config(app_handle, &config)?
+        .initialization_script_for_all_frames(include_str!("iframe_link_bridge.js"))
+        .on_new_window(move |url, _features| {
+            if matches!(url.scheme(), "http" | "https") {
+                match opener_handle.opener().open_url(url.as_str(), None::<&str>) {
+                    Ok(()) => tracing::info!(%url, "webview: opened new-window request in browser"),
+                    Err(err) => {
+                        tracing::warn!(%url, ?err, "webview: failed to open new-window request")
+                    }
+                }
+            } else {
+                tracing::warn!(%url, "webview: blocked non-http(s) new-window request");
+            }
+            NewWindowResponse::Deny
+        })
+        .build()
+}
+
+/// The window starts hidden (`tauri.conf.json`'s `visible`/`focus` are both `false`) so the
+/// frontend's blank-then-painted webview never flashes as a visible window. On Windows it's shown
+/// only once the frontend emits `ready` after its first real paint - unless `Settings::
+/// start_minimized` is set, in which case it's deliberately left hidden (not OS-taskbar-minimized,
+/// matching `main`'s real semantics - see that field's own doc comment) and only recoverable via
+/// the tray's "Show". Falls back to showing if settings fail to load, same as `main`'s own
+/// error-fallback behavior.
+///
+/// **Linux shows immediately here instead of waiting for `ready`.** GNOME/Wayland's
+/// compositor-level anti-focus-stealing protection silently no-ops a programmatic `show()`/
+/// `set_focus()` call unless it's tied to a real user-input event - the tray's "Show" (a real
+/// click) works, but the same call from the `ready` handler never visibly shows the window at all.
+/// Windows has no such restriction. Trades the brief unstyled flash the hidden-start exists to
+/// avoid (Linux only) for the window reliably appearing at all - revisit if a Wayland-safe
+/// activation-token approach is worth the extra complexity later.
+fn setup_window(app_handle: &tauri::AppHandle) -> tauri::Result<()> {
+    let window = build_main_window(app_handle)?;
+
+    let should_start_minimized = settings::load(app_handle)
+        .map(|settings| settings.start_minimized)
+        .unwrap_or(false);
+
+    if cfg!(target_os = "linux") {
+        if !should_start_minimized {
+            if let Err(err) = window.show() {
+                tracing::warn!(?err, "setup_window: failed to show main window immediately");
+            }
+            if let Err(err) = window.set_focus() {
+                tracing::warn!(
+                    ?err,
+                    "setup_window: failed to focus main window immediately"
+                );
+            }
+        }
+        return Ok(());
+    }
+
+    let window_for_ready = window.clone();
+    window.once("ready", move |_| {
+        if !should_start_minimized {
+            if let Err(err) = window_for_ready.show() {
+                tracing::warn!(?err, "setup_window: failed to show main window on ready");
+            }
+            if let Err(err) = window_for_ready.set_focus() {
+                tracing::warn!(?err, "setup_window: failed to focus main window on ready");
+            }
+        }
+    });
+
+    Ok(())
+}

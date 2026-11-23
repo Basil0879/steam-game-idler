@@ -1,0 +1,232 @@
+import type { AchievementDto } from '@/features/achievement-manager/types'
+import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/core'
+import { useTranslation } from 'react-i18next'
+import { GoGrabber } from 'react-icons/go'
+import { TbArchive, TbBan, TbShoppingCartX } from 'react-icons/tb'
+import { Checkbox, cn, Typography } from '@heroui/react'
+import Image from 'next/image'
+import { DlcBadge } from '@/features/achievement-manager/components/DlcBadge'
+import {
+  getAchievementRarityTier,
+  RARITY_TIER_CLASSES,
+  RARITY_TIER_LABEL_KEYS,
+} from '@/features/achievement-manager/utils/achievementRarity'
+import { AppTooltip } from '@/shared/components/AppTooltip'
+import { achievementIconUrl } from '@/shared/utils/achievementIconUrl'
+
+// Card treatment mirrors AchievementRow.tsx's row shape (see that file's doc comment for why) -
+// the rarity pill even reuses the exact same util, since this editor's rows are still real
+// AchievementDto data (OrderableAchievement extends it) with the same `percent` field, and the
+// description line below the name mirrors AchievementRow.tsx's own treatment too. Keep
+// AchievementOrderList.tsx's CARD_HEIGHT in sync with this row's actual rendered height.
+// No delay input here - `delayNextUnlock` is the wait time *between* this achievement and the
+// next one, not a property of either achievement, so it renders as a WaitChip on the timeline
+// line below the card (AchievementOrderList.tsx's AchievementOrderUnit) instead. The `auto`
+// column holds the "Unlocks at" estimate, empty on read-only and skipped cards.
+const ROW_GRID = 'grid-cols-[28px_44px_1fr_auto_28px]'
+
+interface DragHandleProps {
+  attributes: DraggableAttributes
+  listeners: DraggableSyntheticListeners
+}
+
+interface AchievementOrderRowProps {
+  appId: number
+  // Plain AchievementDto rather than OrderableAchievement so the read-only protected list (which
+  // has no skip/delay state at all - see useAchievementOrder.ts's `protectedAchievements`) can
+  // render the same card; the orderable list passes its `skip` through `isSkipped` instead.
+  achievement: AchievementDto
+  isSkipped?: boolean
+  // Achievement belongs to a DLC Achievement Set - see useAchievementOrder.ts's `dlcGroupIds`.
+  isDlc?: boolean
+  // Set = the read-only variant (AchievementOrderList.tsx's trailing sections), and which marker
+  // its checkbox column shows: protected (server-owned), from DLC the account doesn't own, or
+  // archived.
+  readOnlyReason?: 'protected' | 'unownedDlc' | 'archived'
+  isOverlay?: boolean
+  // Pre-formatted "Unlocks at" time (see orderTimeline.ts's formatTimeRange) - omitted for skipped
+  // and read-only cards, which never unlock as part of the run.
+  unlocksAt?: string
+  dragHandleProps?: DragHandleProps
+  onToggleSkip?: (id: string) => void
+}
+
+// One achievement card in the order editor - checkbox (include/skip), icon, name + unlock percent,
+// and a drag handle. Purely presentational: the `useSortable` call (and so the shared transform/ref
+// that actually makes dragging work) lives one level up in AchievementOrderList.tsx's
+// AchievementOrderUnit, which wraps this card together with its trailing ConnectorRow under one
+// sortable node - see that component's doc comment for why (both need to translate together during
+// a live drag, not just snap into place once the array reorders on drop). `dragHandleProps` is that
+// wrapper's `attributes`/`listeners`, spread onto the grab handle here so pointer/keyboard drag
+// activation still originates from this card's own handle icon. Mirrors `main`'s
+// AchievementOrderPage.tsx SortableAchievement, minus the react-window virtualization (see Step 15's
+// own "no virtualized list" note - same small-count reasoning applies here) and keyed by `id`
+// instead of the display `name` (order.rs's own stable key, see its doc comment).
+// `readOnlyReason` is the read-only variant (AchievementOrderList.tsx's trailing protected and
+// unowned-DLC/archived sections): the checkbox column shows the same marker AchievementRow.tsx uses
+// for that case (TbBan + tooltip for protected, a plain TbShoppingCartX for unowned DLC, a plain
+// TbArchive for archived), and the drag-handle
+// column is left empty, so the card keeps the exact same grid and
+// height as an orderable one but offers nothing to toggle or drag.
+export const AchievementOrderRow = ({
+  appId,
+  achievement,
+  isSkipped = false,
+  isDlc = false,
+  readOnlyReason,
+  isOverlay = false,
+  unlocksAt,
+  dragHandleProps,
+  onToggleSkip,
+}: AchievementOrderRowProps) => {
+  const { t } = useTranslation()
+  const isReadOnly = readOnlyReason !== undefined
+  const icon = achievementIconUrl(appId, achievement.iconLocked)
+  const rarityTier =
+    achievement.percent !== undefined ? getAchievementRarityTier(achievement.percent) : null
+
+  return (
+    <div
+      className={cn(
+        'grid items-center gap-3 rounded-xl border px-3 py-2.5',
+        ROW_GRID,
+        'duration-150',
+        // A skipped card reads as switched off: no card fill, a dashed outline, a greyed icon, and
+        // just its name and "Skipped" tag (rarity pill and description are dropped). Never the
+        // whole card via `opacity`, so the checkbox (the one control that brings it back) and the
+        // name stay fully legible. The card keeps its height - the 44px icon still sets it - so
+        // AchievementOrderList.tsx's fixed CARD_HEIGHT holds either way.
+        isSkipped
+          ? 'border-dashed border-surface-tertiary bg-transparent'
+          : isReadOnly
+            ? 'border-border/60 bg-surface'
+            : 'border-border bg-surface',
+        !isOverlay && !isReadOnly && 'hover:border-accent/50',
+        isOverlay && 'border-accent shadow-xl ring-2 ring-accent/30',
+      )}
+    >
+      <div className='flex items-center justify-center'>
+        {readOnlyReason === 'unownedDlc' ? (
+          // No tooltip - the "From DLC you don't own" section header above already says why.
+          <span
+            aria-label={t('dashboard.achievements.sets.notOwned')}
+            className='inline-flex text-muted'
+          >
+            <TbShoppingCartX fontSize={16} />
+          </span>
+        ) : readOnlyReason === 'archived' ? (
+          // No tooltip - the "Archived achievements" section header above already says why.
+          <span
+            aria-label={t('dashboard.achievements.archived.badge')}
+            className='inline-flex text-muted'
+          >
+            <TbArchive fontSize={16} />
+          </span>
+        ) : readOnlyReason === 'protected' ? (
+          <AppTooltip.Root>
+            <AppTooltip.Trigger>
+              <span
+                aria-label={t('dashboard.achievements.protectedTooltip')}
+                className='inline-flex text-warning'
+              >
+                <TbBan fontSize={16} />
+              </span>
+            </AppTooltip.Trigger>
+            <AppTooltip.Content>{t('dashboard.achievements.protectedTooltip')}</AppTooltip.Content>
+          </AppTooltip.Root>
+        ) : (
+          <Checkbox isSelected={!isSkipped} onChange={() => onToggleSkip?.(achievement.id)}>
+            <Checkbox.Content>
+              <Checkbox.Control className='bg-field hover:bg-field-hover text-foreground'>
+                <Checkbox.Indicator />
+              </Checkbox.Control>
+            </Checkbox.Content>
+          </Checkbox>
+        )}
+      </div>
+
+      <Image
+        alt=''
+        className={cn(
+          'rounded-lg ring-2 ring-border/50',
+          (readOnlyReason === 'unownedDlc' || readOnlyReason === 'archived') && 'grayscale',
+          isSkipped && 'opacity-50 grayscale',
+        )}
+        height={44}
+        src={icon}
+        width={44}
+      />
+
+      <div className='flex min-w-0 flex-col'>
+        <div className='flex items-baseline gap-2 min-w-0'>
+          <Typography
+            truncate
+            color={isSkipped || isReadOnly ? 'muted' : undefined}
+            type='body-sm'
+            weight='semibold'
+          >
+            {achievement.name}
+          </Typography>
+          {isDlc && <DlcBadge />}
+          {isSkipped && (
+            <span className='shrink-0 rounded-full bg-surface-secondary px-1.5 py-0.5 text-[10px] font-semibold text-muted'>
+              {t('dashboard.achievementUnlocker.order.skipped')}
+            </span>
+          )}
+          {rarityTier && !isSkipped && (
+            <span
+              className={cn(
+                'shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold whitespace-nowrap',
+                RARITY_TIER_CLASSES[rarityTier],
+              )}
+            >
+              {achievement.percent!.toFixed(1)}% • {t(RARITY_TIER_LABEL_KEYS[rarityTier])}
+            </span>
+          )}
+        </div>
+        {/* AchievementRow.tsx's equivalent blur condition also checks `!achievement.achieved` -
+            omitted here since useAchievementOrder.ts's `load` only ever populates both the orderable
+            and protected lists from still-locked achievements, so `achieved` is always false. */}
+        {!isSkipped && (
+          <Typography
+            className={cn('truncate', achievement.hidden && 'blur-xs hover:blur-none')}
+            color='muted'
+            type='body-xs'
+          >
+            {achievement.description || t('dashboard.achievements.noDescription')}
+          </Typography>
+        )}
+      </div>
+
+      {unlocksAt ? (
+        <div className='flex flex-col items-end text-right'>
+          <Typography className='uppercase tracking-wide text-[10px]' color='muted' type='body-xs'>
+            {t('dashboard.achievementUnlocker.order.unlocksAt')}
+          </Typography>
+          <Typography className='tabular-nums whitespace-nowrap' type='body-xs'>
+            {unlocksAt}
+          </Typography>
+        </div>
+      ) : (
+        <span aria-hidden />
+      )}
+
+      {isReadOnly ? (
+        <span aria-hidden />
+      ) : isOverlay ? (
+        <span className='justify-self-end rounded-full p-1.5'>
+          <GoGrabber className='text-accent' fontSize={22} />
+        </span>
+      ) : (
+        <span
+          {...dragHandleProps?.attributes}
+          {...dragHandleProps?.listeners}
+          className='cursor-grab justify-self-end rounded-full p-1.5 duration-150 hover:bg-surface-hover active:cursor-grabbing'
+          style={{ touchAction: 'none' }}
+        >
+          <GoGrabber className='text-muted hover:text-foreground' fontSize={22} />
+        </span>
+      )}
+    </div>
+  )
+}

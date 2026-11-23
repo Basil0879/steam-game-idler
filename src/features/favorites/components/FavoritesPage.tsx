@@ -1,0 +1,291 @@
+import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { RiSearchLine } from 'react-icons/ri'
+import { TbPlus } from 'react-icons/tb'
+import { useFavorites } from '../hooks/useFavorites'
+import { errorMessageKey as favoritesErrorMessageKey } from '../utils/errorMessageKey'
+import { FavoritesBrowseGrid } from './FavoritesBrowseGrid'
+import { FavoritesListGrid } from './FavoritesListGrid'
+import { FavoritesPreview } from './FavoritesPreview'
+import {
+  Alert,
+  AlertDialog,
+  Button,
+  EmptyState,
+  Tab,
+  TabIndicator,
+  TabList,
+  TabListContainer,
+  TabPanel,
+  TabsRoot,
+  Typography,
+} from '@heroui/react'
+import { useRouter } from 'next/router'
+import { NoGamesBanner } from '@/features/games-list/components/NoGamesBanner'
+import { useGamesList } from '@/features/games-list/hooks/useGamesList'
+import { errorMessageKey as gamesErrorMessageKey } from '@/features/games-list/utils/errorMessageKey'
+import { EmptyListBanner } from '@/shared/components/dashboard/EmptyListBanner'
+import { PageBannerArea } from '@/shared/components/dashboard/PageBanner'
+import { PageBody } from '@/shared/components/dashboard/PageBody'
+import { CountChip, PageToolbar } from '@/shared/components/dashboard/PageToolbar'
+import { GameGridSkeleton } from '@/shared/components/GameGridSkeleton'
+import { GameListTabPanel } from '@/shared/components/GameListTabPanel'
+import { GameSortSelect } from '@/shared/components/GameSortSelect'
+import { ManualAddGameModal } from '@/shared/components/ManualAddGameModal'
+import { useOwnedGameSort } from '@/shared/hooks/useOwnedGameSort'
+import { searchGames } from '@/shared/search/fuzzySearch'
+import { useSearchStore } from '@/shared/stores/searchStore'
+import { useSessionStore } from '@/shared/stores/sessionStore'
+import { useSortPreferencesStore } from '@/shared/stores/sortPreferencesStore'
+import { switchViewWithTransition } from '@/shared/utils/pageTransition'
+import { OWNED_GAME_SORT_LABEL_KEYS, sortOwnedGames } from '@/shared/utils/sortOwnedGames'
+
+type FavoritesTab = 'browse' | 'list'
+
+// Global search filters only the "browse" tab's `games` array - the same array/mechanism
+// GamesPage.tsx already wires. The "list" tab is deliberately
+// left unfiltered: FavoritesListGrid's `onReorder` replaces the *entire* persisted favorites order
+// (`set_favorites_order`), so wiring a filtered subset in as its `favorites` prop would mean
+// dragging while a search is active silently drops every currently filtered-out favorite from the
+// saved order on the next reorder - a real data-loss bug, not just a cosmetic gap. The list is
+// also inherently small/bounded (a curated favorites list, not the full owned-games library) -
+// this same tab is already exempt from virtualization for the analogous "small, and fights
+// @dnd-kit's need for every item mounted" reasoning, which extends naturally to skipping
+// filtering here too.
+export const FavoritesPage = () => {
+  const { t, i18n } = useTranslation()
+  const router = useRouter()
+  const account = useSessionStore(state => state.account)
+  const { phase, games, errorCode: gamesErrorCode, refresh } = useGamesList()
+  const {
+    favorites,
+    isLoading: favoritesLoading,
+    errorCode: favoritesErrorCode,
+    pendingAppIds,
+    addFavorite,
+    removeFavorite,
+    reorder,
+    toggleFavorite,
+  } = useFavorites()
+  const [activeTab, setActiveTab] = useState<FavoritesTab>('browse')
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false)
+  const [isManualAddOpen, setIsManualAddOpen] = useState(false)
+  const searchQuery = useSearchStore(state => state.queries.favorites ?? '')
+  const setActiveTabSearchable = useSearchStore(state => state.setActiveTabSearchable)
+  const filteredGames = useMemo(() => searchGames(games, searchQuery), [games, searchQuery])
+  // Persisted across navigation/reload/restart via `sortPreferencesStore` (localStorage) - see
+  // GamesPage.tsx's identical wiring.
+  const sortStyle = useSortPreferencesStore(state => state.favorites)
+  const setSortStyle = useSortPreferencesStore(state => state.setSortPreference)
+  const { options: sortStyleOptions, effectiveStyle: effectiveSortStyle } =
+    useOwnedGameSort(sortStyle)
+  const sortedFilteredGames = useMemo(
+    () => sortOwnedGames(filteredGames, effectiveSortStyle, i18n.language),
+    [filteredGames, effectiveSortStyle, i18n.language],
+  )
+
+  const favoritedAppIds = useMemo(() => new Set(favorites.map(f => f.appId)), [favorites])
+
+  useEffect(() => {
+    if (!account) {
+      router.replace('/')
+    }
+  }, [account, router])
+
+  // Search only filters the "browse" tab (see the file-level comment above) - hide the titlebar
+  // affordance entirely while on the unfiltered "list" tab rather than leave it visibly present
+  // but silently inert. Resets back to `true` on unmount so navigating away doesn't leave search
+  // hidden elsewhere.
+  useEffect(() => {
+    setActiveTabSearchable(activeTab === 'browse')
+    return () => setActiveTabSearchable(true)
+  }, [activeTab, setActiveTabSearchable])
+
+  if (!account) {
+    return null
+  }
+
+  const manualAddButton = (
+    <Button
+      isIconOnly
+      aria-label={t('common.manualAdd.title')}
+      variant='secondary'
+      onPress={() => setIsManualAddOpen(true)}
+    >
+      <TbPlus fontSize={18} />
+    </Button>
+  )
+
+  return (
+    <div className='flex h-full flex-col'>
+      <PageBody>
+        {favoritesErrorCode && (
+          <div className='px-6 pt-4'>
+            <Alert status='danger'>
+              <Alert.Indicator />
+              <Alert.Content>
+                <Alert.Title>{t('dashboard.favorites.errors.title')}</Alert.Title>
+                <Alert.Description>
+                  {t(favoritesErrorMessageKey(favoritesErrorCode), { code: favoritesErrorCode })}
+                </Alert.Description>
+              </Alert.Content>
+            </Alert>
+          </div>
+        )}
+
+        <TabsRoot
+          className='tabs-transition-area flex min-h-0 flex-1 flex-col'
+          selectedKey={activeTab}
+          onSelectionChange={key =>
+            switchViewWithTransition('tabs', () => setActiveTab(key as FavoritesTab))
+          }
+        >
+          <PageToolbar
+            start={
+              <TabListContainer className='shrink-0'>
+                <TabList>
+                  <Tab className='gap-2 whitespace-nowrap' id='browse'>
+                    {t('common.tabs.allGames')}
+                    {phase !== 'loading' && <CountChip count={filteredGames.length} />}
+                    <TabIndicator />
+                  </Tab>
+                  <Tab className='gap-2 whitespace-nowrap' id='list'>
+                    {t('dashboard.sidebar.nav.favorites')}
+                    {!favoritesLoading && <CountChip count={favorites.length} />}
+                    <TabIndicator />
+                  </Tab>
+                </TabList>
+              </TabListContainer>
+            }
+          >
+            {activeTab === 'browse' && (
+              <GameSortSelect
+                isDisabled={games.length === 0}
+                ariaLabel={t('dashboard.inventoryManager.sort.label')}
+                options={sortStyleOptions.map(style => ({
+                  id: style,
+                  label: t(OWNED_GAME_SORT_LABEL_KEYS[style]),
+                }))}
+                value={effectiveSortStyle}
+                onChange={style => setSortStyle('favorites', style)}
+              />
+            )}
+            {activeTab === 'list' && favorites.length > 0 && (
+              <Button
+                className='shrink-0'
+                variant='danger-soft'
+                onPress={() => setConfirmClearOpen(true)}
+              >
+                {t('common.actions.clear')}
+              </Button>
+            )}
+            {manualAddButton}
+          </PageToolbar>
+
+          <TabPanel className='min-h-0 flex-1 overflow-y-auto p-0' id='browse'>
+            {phase === 'loading' ? (
+              <GameGridSkeleton />
+            ) : gamesErrorCode ? (
+              <div className='flex flex-1 flex-col items-center justify-center gap-4 p-8'>
+                <Alert className='max-w-md' status='danger'>
+                  <Alert.Indicator />
+                  <Alert.Content>
+                    <Alert.Title>{t('dashboard.games.errors.title')}</Alert.Title>
+                    <Alert.Description>
+                      {t(gamesErrorMessageKey(gamesErrorCode), { code: gamesErrorCode })}
+                    </Alert.Description>
+                  </Alert.Content>
+                </Alert>
+                <Button variant='secondary' onPress={refresh}>
+                  {t('common.actions.tryAgain')}
+                </Button>
+              </div>
+            ) : games.length === 0 ? (
+              <PageBannerArea hasToolbar>
+                <NoGamesBanner onRefresh={refresh} />
+              </PageBannerArea>
+            ) : filteredGames.length === 0 ? (
+              <EmptyState className='flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center'>
+                <RiSearchLine fontSize={40} />
+                <Typography type='h3'>{t('common.search.noResultsTitle')}</Typography>
+                <Typography color='muted' type='body-sm'>
+                  {t('common.search.noResultsDescription')}
+                </Typography>
+              </EmptyState>
+            ) : (
+              <FavoritesBrowseGrid
+                favoritedAppIds={favoritedAppIds}
+                games={sortedFilteredGames}
+                pendingAppIds={pendingAppIds}
+                onToggle={game => toggleFavorite(game.appId, game.name ?? String(game.appId))}
+              />
+            )}
+          </TabPanel>
+
+          <GameListTabPanel id='list'>
+            {favoritesLoading ? (
+              <GameGridSkeleton />
+            ) : favorites.length === 0 ? (
+              <PageBannerArea hasToolbar>
+                <EmptyListBanner
+                  art={<FavoritesPreview />}
+                  description={t('dashboard.favorites.empty.description')}
+                  title={t('dashboard.favorites.empty.title')}
+                  onBrowseGames={() =>
+                    switchViewWithTransition('tabs', () => setActiveTab('browse'))
+                  }
+                  onManualAdd={() => setIsManualAddOpen(true)}
+                />
+              </PageBannerArea>
+            ) : (
+              <FavoritesListGrid
+                favorites={favorites}
+                pendingAppIds={pendingAppIds}
+                onRemove={removeFavorite}
+                onReorder={reorder}
+              />
+            )}
+          </GameListTabPanel>
+        </TabsRoot>
+
+        <AlertDialog isOpen={confirmClearOpen} onOpenChange={setConfirmClearOpen}>
+          <AlertDialog.Backdrop>
+            <AlertDialog.Container>
+              <AlertDialog.Dialog>
+                <AlertDialog.Header>
+                  <AlertDialog.Heading>
+                    {t('dashboard.favorites.confirmClear.title')}
+                  </AlertDialog.Heading>
+                </AlertDialog.Header>
+                <AlertDialog.Body>
+                  {t('dashboard.favorites.confirmClear.description', { count: favorites.length })}
+                </AlertDialog.Body>
+                <AlertDialog.Footer>
+                  <Button variant='secondary' onPress={() => setConfirmClearOpen(false)}>
+                    {t('common.actions.cancel')}
+                  </Button>
+                  <Button
+                    variant='danger-soft'
+                    onPress={() => {
+                      reorder([])
+                      setConfirmClearOpen(false)
+                    }}
+                  >
+                    {t('common.actions.clear')}
+                  </Button>
+                </AlertDialog.Footer>
+              </AlertDialog.Dialog>
+            </AlertDialog.Container>
+          </AlertDialog.Backdrop>
+        </AlertDialog>
+
+        <ManualAddGameModal
+          existingAppIds={favorites.map(f => f.appId)}
+          isOpen={isManualAddOpen}
+          onAdd={addFavorite}
+          onOpenChange={setIsManualAddOpen}
+        />
+      </PageBody>
+    </div>
+  )
+}

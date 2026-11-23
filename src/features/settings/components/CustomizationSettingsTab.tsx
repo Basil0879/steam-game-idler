@@ -1,0 +1,488 @@
+﻿import type { FontPreset } from '@/shared/theme/font'
+import type { ThemePreset } from '@/shared/theme/presets'
+import type { ThemeTokens } from '@/shared/theme/tokens'
+import type { Settings } from '../types'
+import { open } from '@tauri-apps/plugin-dialog'
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { customizationErrorMessageKey } from '../utils/errorMessageKey'
+import {
+  Alert,
+  Button,
+  cn,
+  ListBox,
+  Radio,
+  RadioGroup,
+  Select,
+  Separator,
+  Skeleton,
+  toast,
+  Typography,
+} from '@heroui/react'
+import { SettingsRow } from '@/shared/components/SettingsRow'
+import { TierBadge } from '@/shared/components/TierBadge'
+import { ToggleSwitch } from '@/shared/components/ToggleSwitch'
+import { useActiveThemeStore } from '@/shared/stores/activeThemeStore'
+import { useCustomBackgroundStore } from '@/shared/stores/customBackgroundStore'
+import { useDisableTooltipsStore } from '@/shared/stores/disableTooltipsStore'
+import { useGameCardStyleStore } from '@/shared/stores/gameCardStyleStore'
+import { useProModalStore } from '@/shared/stores/proModalStore'
+import { useSubscriptionStore } from '@/shared/stores/subscriptionStore'
+import { isSignatureTheme } from '@/shared/theme/ambientShaders'
+import { applyFont, FONT_STORAGE_KEY } from '@/shared/theme/applyFont'
+import { applyThemePreset, THEME_STORAGE_KEY } from '@/shared/theme/applyTheme'
+import { FONT_CSS_VARS, FONT_DISPLAY_NAMES, FONT_KEYS } from '@/shared/theme/font'
+import {
+  DEFAULT_THEME_PREVIEW_TOKENS,
+  THEME_PRESETS,
+  THEME_SWATCH_BACKGROUNDS,
+} from '@/shared/theme/presets'
+import { invoke } from '@/shared/utils/invoke'
+import { revealTitleIfTruncated } from '@/shared/utils/revealTitleIfTruncated'
+import { hasCasualAccess } from '@/shared/utils/subscriptionAccess'
+
+interface CustomizationSettingsTabProps {
+  settings: Settings | null
+  isLoading: boolean
+  loadErrorCode: string | null
+  actionErrorCode: string | null
+  onRefresh: () => void
+  onSaveTheme: (theme: string) => Promise<boolean>
+  onSaveDisableTooltips: (enabled: boolean) => Promise<boolean>
+  onSaveCustomBackground: (path: string) => Promise<boolean>
+  onClearCustomBackground: () => Promise<boolean>
+  onSaveFont: (font: string) => Promise<boolean>
+}
+
+// Theme keys in display order, `default` first - `THEME_PRESETS` itself has no entry for `default`
+// (see that file's header comment), so its preview tokens are read from
+// `DEFAULT_THEME_PREVIEW_TOKENS` instead of the registry. Split into two rows - the animated
+// signature presets first, as the headline option, then the plain color presets - so they read as
+// their own tier of theme rather than more color swatches.
+const COLOR_THEME_KEYS: (ThemePreset | 'default')[] = [
+  'default',
+  'blue',
+  'red',
+  'purple',
+  'pink',
+  'orange',
+  'black',
+  'white',
+]
+const SIGNATURE_THEME_KEYS: ThemePreset[] = [
+  'synthwave',
+  'aurora',
+  'nebula',
+  'terminal',
+  'ember',
+  'abyss',
+  'sugarDay',
+  'sugarNight',
+  'sakura',
+  'lofiRain',
+  'fireflies',
+  'holo',
+  'blackHole',
+  'lavaLamp',
+  'circuit',
+  'luxe',
+  'arcade',
+]
+
+// The last of 11 settings categories - built once its underlying features (multi-theme system,
+// custom background, dashboard carousels, global `disableTooltips`) existed in full.
+// Theme/background are Casual-tier gated; the two carousel visibility toggles and the tooltip
+// toggle are free for everyone - gating only applies to *which* theme/background can be picked, not
+// whether
+// this tab's controls are usable at all.
+export const CustomizationSettingsTab = ({
+  settings,
+  isLoading,
+  loadErrorCode,
+  actionErrorCode,
+  onRefresh,
+  onSaveTheme,
+  onSaveDisableTooltips,
+  onSaveCustomBackground,
+  onClearCustomBackground,
+  onSaveFont,
+}: CustomizationSettingsTabProps) => {
+  const { t } = useTranslation()
+  const subscriptionTier = useSubscriptionStore(state => state.subscriptionTier)
+  const canUseCasualFeatures = hasCasualAccess(subscriptionTier)
+  const openProModalWithTier = useProModalStore(state => state.openWithTier)
+
+  const disableTooltips = useDisableTooltipsStore(state => state.disabled)
+  const gameCardStyle = useGameCardStyleStore(state => state.style)
+  const setGameCardStyle = useGameCardStyleStore(state => state.setStyle)
+  const setDisableTooltips = useDisableTooltipsStore(state => state.setDisabled)
+  const backgroundDataUrl = useCustomBackgroundStore(state => state.dataUrl)
+  const setBackgroundDataUrl = useCustomBackgroundStore(state => state.setDataUrl)
+  const [isChoosingBackground, setIsChoosingBackground] = useState(false)
+  const [isClearingBackground, setIsClearingBackground] = useState(false)
+  // The rendered theme rather than `settings.theme`, so this follows a theme change straight away
+  // and is false for a saved signature theme the account's tier no longer covers.
+  const isBackgroundOverridden = useActiveThemeStore(state => isSignatureTheme(state.preset))
+
+  const reportError = (code: string | null) => {
+    if (code) {
+      toast.danger(t(customizationErrorMessageKey(code), { code }))
+    }
+  }
+
+  const handleToggleTooltips = async (next: boolean) => {
+    const ok = await onSaveDisableTooltips(next)
+    if (ok) {
+      setDisableTooltips(next)
+    } else {
+      reportError(actionErrorCode)
+    }
+  }
+
+  const handleChooseBackground = async () => {
+    const path = await open({
+      multiple: false,
+      filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif'] }],
+    })
+    if (!path) return
+
+    setIsChoosingBackground(true)
+    try {
+      const ok = await onSaveCustomBackground(path)
+      if (ok) {
+        try {
+          setBackgroundDataUrl(await invoke<string | null>('get_custom_background_data_url'))
+          toast.success(t('dashboard.settings.customization.background.saved'))
+        } catch (error) {
+          console.error('Error in (get_custom_background_data_url):', error)
+        }
+      } else {
+        reportError(actionErrorCode)
+      }
+    } finally {
+      setIsChoosingBackground(false)
+    }
+  }
+
+  const handleClearBackground = async () => {
+    setIsClearingBackground(true)
+    try {
+      const ok = await onClearCustomBackground()
+      if (ok) {
+        setBackgroundDataUrl(null)
+        toast.success(t('dashboard.settings.customization.background.cleared'))
+      } else {
+        reportError(actionErrorCode)
+      }
+    } finally {
+      setIsClearingBackground(false)
+    }
+  }
+
+  // Applies immediately for a live preview (not just after the next reload), then persists -
+  // mirrors `useTheme.ts`'s own resolution logic (`default` clears any inline override). A locked
+  // (non-default, non-casual-tier) selection opens the upsell instead of saving - the swatch itself
+  // is deliberately not `isDisabled` (see the swatch render below for why), so this guard is what
+  // actually prevents a gated theme from ever being applied for a non-eligible account; because
+  // `RadioGroup`'s `value` stays bound to `settings.theme`, skipping the save also means the radio
+  // never visually moves off the current selection.
+  const handleSelectTheme = async (theme: string) => {
+    if (theme !== 'default' && !canUseCasualFeatures) {
+      openProModalWithTier('casual')
+      return
+    }
+
+    const ok = await onSaveTheme(theme)
+    if (ok) {
+      applyThemePreset(theme)
+      localStorage.setItem(THEME_STORAGE_KEY, theme)
+      toast.success(t('dashboard.settings.customization.theme.saved'))
+    } else {
+      reportError(actionErrorCode)
+    }
+  }
+
+  // Mirrors `handleSelectTheme` exactly, applied to the font choice instead of theme tokens - a
+  // locked (non-`inter`, non-casual-tier) selection opens the upsell instead of saving, and
+  // `Select.Root`'s `selectedKey` stays bound to `settings.font` so a skipped save never visually
+  // moves the dropdown off the current selection.
+  const handleSelectFont = async (font: string) => {
+    if (font !== 'inter' && !canUseCasualFeatures) {
+      openProModalWithTier('casual')
+      return
+    }
+
+    const ok = await onSaveFont(font)
+    if (ok) {
+      applyFont(font === 'inter' ? null : (font as FontPreset))
+      localStorage.setItem(FONT_STORAGE_KEY, font)
+      toast.success(t('dashboard.settings.customization.font.saved'))
+    } else {
+      reportError(actionErrorCode)
+    }
+  }
+
+  const renderSwatch = (key: ThemePreset | 'default') => {
+    // Widened to `ThemeTokens` - the `as const` registry's per-preset literal types don't all
+    // declare the optional `accent` key.
+    const tokens: ThemeTokens =
+      key === 'default' ? DEFAULT_THEME_PREVIEW_TOKENS : THEME_PRESETS[key]
+    const swatchBackground = key === 'default' ? undefined : THEME_SWATCH_BACKGROUNDS[key]
+    const isLocked = key !== 'default' && !canUseCasualFeatures
+    return (
+      <div key={key}>
+        {/* Not `isDisabled` - same reason as the background "Choose image" button above:
+            HeroUI's `Radio` mirrors Button's native-disabled semantics, which would silently
+            swallow the real click a locked swatch needs to open the upsell. Styled locked via a
+            plain conditional className instead of `data-disabled`, and `handleSelectTheme` (not
+            this component) is what actually stops a gated theme from being applied. */}
+        <Radio value={key}>
+          <Radio.Content
+            className={cn(
+              'flex min-w-16 flex-col items-center gap-1 rounded-lg p-2 outline-none data-focus-visible:ring-2 data-focus-visible:ring-focus data-selected:ring-2 data-selected:ring-accent',
+              isLocked ? 'opacity-50' : 'cursor-pointer',
+            )}
+          >
+            <span
+              className='relative h-8 w-8 overflow-hidden rounded-full border border-border'
+              style={{ background: swatchBackground ?? tokens.background }}
+            >
+              {/* Accent pip, signature presets only: it pairs with their backdrop art, while a
+                  plain color preset's swatch is just its color. */}
+              {swatchBackground && tokens.accent && (
+                <span
+                  className='absolute right-0.5 bottom-0.5 h-2.5 w-2.5 rounded-full ring-1 ring-black/40'
+                  style={{ background: tokens.accent }}
+                />
+              )}
+            </span>
+            {/* Up to two lines, not single-line `truncate`: every English name fits on one line,
+                but longer locales got cut to a few letters. The swatch row is `flex-wrap` with
+                nothing aligned underneath, so a two-line name costs nothing; past two lines the
+                full name is still recoverable on hover. */}
+            <span
+              className='line-clamp-2 w-full max-w-20 wrap-break-word text-center text-xs'
+              onMouseEnter={revealTitleIfTruncated}
+            >
+              {t(`dashboard.settings.customization.theme.names.${key}`)}
+            </span>
+          </Radio.Content>
+        </Radio>
+      </div>
+    )
+  }
+
+  if (loadErrorCode) {
+    return (
+      <div className='flex flex-col items-center gap-4 p-8 text-center'>
+        <Alert className='max-w-md' status='danger'>
+          <Alert.Indicator />
+          <Alert.Content>
+            <Alert.Title>{t('dashboard.settings.errors.title')}</Alert.Title>
+            <Alert.Description>
+              {t(customizationErrorMessageKey(loadErrorCode), { code: loadErrorCode })}
+            </Alert.Description>
+          </Alert.Content>
+        </Alert>
+        <Button variant='secondary' onPress={onRefresh}>
+          {t('common.actions.tryAgain')}
+        </Button>
+      </div>
+    )
+  }
+
+  if (isLoading || !settings) {
+    return (
+      <div className='flex flex-col gap-4'>
+        {Array.from({ length: 5 }, (_, index) => (
+          <Skeleton key={index} className='h-10 w-full rounded-lg' />
+        ))}
+      </div>
+    )
+  }
+
+  return (
+    <div className='flex flex-col gap-4'>
+      <SettingsRow
+        description={t('dashboard.settings.customization.tooltips.description')}
+        title={t('dashboard.settings.customization.tooltips.label')}
+      >
+        <ToggleSwitch isSelected={disableTooltips} onChange={handleToggleTooltips} />
+      </SettingsRow>
+
+      {/* Saved per device rather than in settings.json - see gameCardStyleStore.ts */}
+      <SettingsRow
+        description={t('dashboard.settings.customization.gameCardStyle.description')}
+        showDivider={true}
+        title={t('dashboard.settings.customization.gameCardStyle.label')}
+      >
+        <Select.Root
+          aria-label={t('dashboard.settings.customization.gameCardStyle.label')}
+          className='w-48'
+          selectedKey={gameCardStyle}
+          onSelectionChange={key => setGameCardStyle(key === 'banner' ? 'banner' : 'cover')}
+        >
+          <Select.Trigger>
+            <Select.Value />
+            <Select.Indicator />
+          </Select.Trigger>
+          <Select.Popover>
+            <ListBox>
+              <ListBox.Item
+                id='cover'
+                textValue={t('dashboard.settings.customization.gameCardStyle.cover')}
+              >
+                {t('dashboard.settings.customization.gameCardStyle.cover')}
+                <ListBox.ItemIndicator />
+              </ListBox.Item>
+              <ListBox.Item
+                id='banner'
+                textValue={t('dashboard.settings.customization.gameCardStyle.banner')}
+              >
+                {t('dashboard.settings.customization.gameCardStyle.banner')}
+                <ListBox.ItemIndicator />
+              </ListBox.Item>
+            </ListBox>
+          </Select.Popover>
+        </Select.Root>
+      </SettingsRow>
+
+      <SettingsRow
+        description={t('dashboard.settings.customization.font.description')}
+        showDivider={true}
+        title={
+          <span className='flex items-center gap-2'>
+            {t('dashboard.settings.customization.font.label')}
+            {!canUseCasualFeatures && <TierBadge tier='casual' />}
+          </span>
+        }
+      >
+        {/* Not a fully locked control like GeneralSettingsTab's persona-state Select - `inter`
+            stays free for everyone, matching the theme swatches' "default always available"
+            pattern. Every font key stays selectable; `handleSelectFont` (not this component) is
+            what actually stops a gated font from being applied, mirroring `handleSelectTheme`. */}
+        <Select.Root
+          aria-label={t('dashboard.settings.customization.font.label')}
+          className='w-48'
+          selectedKey={settings.font}
+          onSelectionChange={key => handleSelectFont(key as string)}
+        >
+          <Select.Trigger>
+            <Select.Value />
+            <Select.Indicator />
+          </Select.Trigger>
+          <Select.Popover>
+            {/* No per-item lock badge - the row-level TierBadge above already signals the gate for
+                the whole control; `handleSelectFont` (not this component) is what actually stops a
+                gated font from being applied. */}
+            {/* Each item previews itself in its own typeface (via the CSS var already present on
+                <html>, see FONT_VARIABLE_CLASSNAME) - with 20+ fonts to trial, picking one is
+                only meaningful if the list actually shows what each font looks like. */}
+            <ListBox items={FONT_KEYS.map(key => ({ id: key }))}>
+              {item => (
+                <ListBox.Item id={item.id} textValue={FONT_DISPLAY_NAMES[item.id]}>
+                  <span style={{ fontFamily: `var(${FONT_CSS_VARS[item.id]})` }}>
+                    {FONT_DISPLAY_NAMES[item.id]}
+                  </span>
+                  <ListBox.ItemIndicator />
+                </ListBox.Item>
+              )}
+            </ListBox>
+          </Select.Popover>
+        </Select.Root>
+      </SettingsRow>
+
+      <SettingsRow
+        description={t('dashboard.settings.customization.background.description')}
+        showDivider={false}
+        title={
+          <span className='flex items-center gap-2'>
+            {t('dashboard.settings.customization.background.label')}
+            {!canUseCasualFeatures && <TierBadge tier='casual' />}
+          </span>
+        }
+      >
+        <div className='flex items-center gap-2'>
+          {canUseCasualFeatures ? (
+            <Button
+              isDisabled={isClearingBackground || isBackgroundOverridden}
+              isPending={isChoosingBackground}
+              size='sm'
+              variant='secondary'
+              onPress={handleChooseBackground}
+            >
+              {t('dashboard.settings.customization.background.choose')}
+            </Button>
+          ) : (
+            // Not `isDisabled` - HeroUI's Button maps that to a real native `disabled`
+            //         attribute, which suppresses real trusted click events entirely (confirmed live
+            //         via CDP), not just bubbling. Styled to look disabled instead, with a real
+            //         `onPress` that opens the upsell - the same reason InventoryPageHeader/
+            //         AchievementOrderOverlay's gated buttons below do the same.
+            <Button
+              className='opacity-50'
+              size='sm'
+              variant='secondary'
+              onPress={() => openProModalWithTier('casual')}
+            >
+              {t('dashboard.settings.customization.background.choose')}
+            </Button>
+          )}
+          {/* Not gated behind `canUseCasualFeatures` unlike "Choose" above - a background set while
+              subscribed must stay clearable after a downgrade (it already stops rendering per
+              CustomBackground.tsx's own tier check regardless), or the file would be stuck on disk
+              with no UI path to remove it short of "Reset all settings". Disabling it under a
+              signature theme doesn't undo that: a downgrade drops the active theme to `default`. */}
+          <Button
+            isDisabled={isChoosingBackground || !backgroundDataUrl || isBackgroundOverridden}
+            isPending={isClearingBackground}
+            size='sm'
+            variant='secondary'
+            onPress={handleClearBackground}
+          >
+            {t('common.actions.clear')}
+          </Button>
+        </div>
+      </SettingsRow>
+      {isBackgroundOverridden && (
+        <Alert status='accent'>
+          <Alert.Indicator />
+          <Alert.Content>
+            <Alert.Description>
+              {t('dashboard.settings.customization.background.signatureThemeActive')}
+            </Alert.Description>
+          </Alert.Content>
+        </Alert>
+      )}
+      <Separator className='border-t border-border my-2' />
+
+      <div className='flex flex-col gap-2'>
+        <span className='flex items-center gap-2'>
+          <Typography type='body-sm' weight='semibold'>
+            {t('dashboard.settings.customization.theme.label')}
+          </Typography>
+          {!canUseCasualFeatures && <TierBadge tier='casual' />}
+        </span>
+        <Typography color='muted' type='body-xs'>
+          {t('dashboard.settings.customization.theme.description')}
+        </Typography>
+
+        {/* One RadioGroup spanning both rows (not two groups) so arrow-key navigation and the
+            single bound `value` keep working across color and signature presets alike. */}
+        <RadioGroup
+          aria-label={t('dashboard.settings.customization.theme.label')}
+          className='flex flex-col gap-3 pt-1'
+          value={settings.theme}
+          onChange={handleSelectTheme}
+        >
+          <div className='flex flex-row flex-wrap gap-3'>
+            {SIGNATURE_THEME_KEYS.map(key => renderSwatch(key))}
+          </div>
+          <div className='flex flex-row flex-wrap gap-3'>
+            {COLOR_THEME_KEYS.map(key => renderSwatch(key))}
+          </div>
+        </RadioGroup>
+      </div>
+    </div>
+  )
+}

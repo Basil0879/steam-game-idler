@@ -1,0 +1,1337 @@
+{
+  "common": {
+    "actions": {
+      "submit": "Submit",
+      "cancel": "Cancel",
+      "close": "Close",
+      "tryAgain": "Try again",
+      "continue": "Continue",
+      "refresh": "Refresh",
+      "save": "Save",
+      "settings": "Settings",
+      "signIn": "Sign In",
+      "signOut": "Sign out",
+      "start": "Start",
+      "stop": "Stop",
+      "clear": "Clear",
+      "done": "Done",
+      "copy": "Copy",
+      "paste": "Paste",
+      "add": "Add",
+      "ok": "OK"
+    },
+    "gameCardMenu": {
+      "startIdling": "Start Idling",
+      "stopIdling": "Stop Idling",
+      "manageAchievements": "Manage Achievements",
+      "customOrder": "Custom Order & Unlock Delay",
+      "viewOnSteam": "View on Steam",
+      "copyAppId": "Copy App ID",
+      "appIdCopied": "App ID copied",
+      "cardFarmingBlacklist": "Card Farming Blacklist",
+      "lists": "Lists"
+    },
+    "minutes": "minutes",
+    "zeroUnlimitedHint": "0 = unlimited",
+    "errorBoundary": {
+      "title": "Something went wrong",
+      "description": "An unexpected error occurred. Try again, and if it keeps happening, reach out from Help & Support."
+    },
+    "manualCookies": {
+      "slsLabel": "steamLoginSecure",
+      "smaLabel": "steamMachineAuth",
+      "smaDescription": "Optional. Only needed if your account has a pending Steam Guard machine confirmation.",
+      "getCookiesNote": "You must get your cookies from",
+      "savedFromSettingsNote": "Loaded from the Steam Credentials saved in Settings.",
+      "savedToast": "Credentials saved",
+      "clearedToast": "Credentials cleared",
+      "clearFailed": "Couldn't clear your saved Steam credentials. ({{code}})"
+    },
+    "manualAdd": {
+      "title": "Add game manually",
+      "description": "Add a game by its Steam App ID if it isn't showing up automatically.",
+      "nameLabel": "Name",
+      "namePlaceholder": "e.g. K-On! The Movie",
+      "appIdLabel": "App ID",
+      "appIdPlaceholder": "e.g. 518440",
+      "duplicateError": "This App ID is already in the list"
+    },
+    "search": {
+      "placeholder": "Search",
+      "recentSearches": "Recent searches",
+      "noRecentSearches": "No recent searches",
+      "noResults": "No results found",
+      "noResultsTitle": "No games match your search",
+      "noResultsDescription": "Try a different title or App ID."
+    },
+    "errors": {
+      "generic": "Something went wrong. Please try again. ({{code}})",
+      "steamUtilityMissing": "The Steam agent component is missing from this installation.",
+      "processSpawnFailed": "Couldn't start the Steam agent process.",
+      "processExited": "The Steam agent process closed unexpectedly.",
+      "timeout": "Steam took too long to respond. Please try again.",
+      "sessionNotFound": "Your Steam session isn't active anymore. Please sign in again.",
+      "steamIdUnknown": "Your Steam ID hasn't been resolved yet. Please try again in a moment.",
+      "steamNotRunning": "Steam isn't running. Please start Steam and try again.",
+      "steamNotReady": "Steam is open but isn't signed in yet. Sign in to Steam, or wait for it to finish starting, then try again.",
+      "steamClientOutdated": "Your Steam client is out of date. Restart Steam so it can update, then try again.",
+      "gameNotOwned": "The Steam account signed in on this PC doesn't own this game.",
+      "steamGameUnavailable": "Steam wouldn't load this game right now. If it's shared through Steam Families, another user may be playing it. Try again once they've stopped."
+    },
+    "notifications": "Notifications",
+    "menu": "Menu",
+    "needHelp": "Need help?",
+    "learnMore": "Learn more",
+    "status": {
+      "saved": "Saved",
+      "cleared": "Cleared",
+      "paused": "Paused",
+      "running": "Running"
+    },
+    "steamWarning": {
+      "title": "Notice",
+      "description": "Steam is closed. Please relaunch Steam to continue."
+    },
+    "banner": {
+      "pastDue": "Your PRO subscription is past due. Please update your payment method to avoid losing access.",
+      "manageSubscription": "Manage Subscription"
+    },
+    "badges": {
+      "beta": "Beta"
+    },
+    "tabs": {
+      "allGames": "All Games",
+      "queue": "Queue",
+      "overview": "Overview",
+      "details": "Details"
+    },
+    "connect": {
+      "automaticTab": "Automatic",
+      "manualTab": "Manual"
+    },
+    "sort": {
+      "nameAsc": "Name (A-Z)",
+      "nameDesc": "Name (Z-A)"
+    },
+    "noGamesQueued": "No games queued",
+    "completedThisSessionCount": "Completed this session ({{count}})"
+  },
+  "versionPolicy": {
+    "outdated": {
+      "title": "Update recommended",
+      "description": "This version of Steam Game Idler will stop working soon. Update now to keep using it without interruption."
+    },
+    "unsupported": {
+      "title": "Update required",
+      "description": "This version of Steam Game Idler is no longer supported. Update to the latest version to continue using the app."
+    },
+    "currentVersion": "Your version: {{version}}",
+    "installUpdate": "Install update",
+    "downloadUpdate": "Download update",
+    "remindLater": "Remind me later"
+  },
+  "update": {
+    "downloading": "Downloading update...",
+    "failed": "The update couldn't be completed. Check your internet connection and try again.",
+    "continueWithoutUpdating": "Continue without updating"
+  },
+  "legacyInstall": {
+    "title": "Remove old files?",
+    "description": "Updates no longer need administrator permission. The previous version left some files behind, and Windows will ask for permission one last time to remove them. Nothing that's running will be stopped.",
+    "remove": "Remove",
+    "removed": "Old files removed",
+    "declined": "Old files weren't removed",
+    "failed": "Couldn't remove the old files"
+  },
+  "toast": {
+    "checkUpdate": {
+      "none": "You're already on the latest version",
+      "error": "Couldn't check for updates. Please try again."
+    },
+    "paypalCheckout": {
+      "error": "Couldn't start PayPal checkout. Please try again."
+    }
+  },
+  "notifications": {
+    "markAllRead": "Mark all as read",
+    "unread": "Unread",
+    "read": "Read",
+    "open": "Open",
+    "caughtUp": "You're all caught up",
+    "caughtUpDescription": "Nothing new. Older notifications are under Read.",
+    "noneRead": "No read notifications",
+    "noneReadDescription": "Notifications you've read show up here.",
+    "types": {
+      "update": "Update",
+      "issue": "Known issue",
+      "giveaway": "Giveaway",
+      "testing": "Testing",
+      "news": "News",
+      "announcement": "Announcement"
+    },
+    "empty": "No notifications yet"
+  },
+  "menu": {
+    "guide": "Documentation",
+    "issue": "Report an issue",
+    "feature": "Feature request",
+    "joinDiscord": "Join our Discord",
+    "changelog": "Changelog",
+    "update": "Check for updates"
+  },
+  "changelog": {
+    "star": "Star on GitHub"
+  },
+  "titlebar": {
+    "closeToTrayNotification": "Steam Game Idler will continue to run in the background",
+    "helpDesk": "Help Desk",
+    "updateReady": "Update ready"
+  },
+  "tray": {
+    "show": "Show",
+    "recenter": "Reset Window Position",
+    "update": "Check for updates..",
+    "quit": "Quit",
+    "noUpdates": "No updates available"
+  },
+  "proMode": {
+    "hero": {
+      "headline": "Unlock more features",
+      "subtext": "SGI's core features are <1>free</1>, and <3>always will be</3>. PRO exists purely for users who wish to support the ongoing development of SGI — the extra features are our way of saying <5>thank you</5> for your support.",
+      "viewTiers": "View PRO Tiers",
+      "startingAt": "Starting at ${{price}}/month · Cancel anytime"
+    },
+    "section": {
+      "topFeatures": "Top Features",
+      "seeAllFeatures": "View All Features",
+      "chooseTier": "Choose Your Tier",
+      "comparePlans": "Compare Tiers",
+      "faq": "FAQ"
+    },
+    "cards": {
+      "adFree": {
+        "title": "Ad-Free Experience",
+        "description": "Use SGI without any advertisements for a completely clean, distraction-free interface."
+      },
+      "themes": {
+        "title": "Exclusive Themes",
+        "description": "Customize SGI with exclusive color themes and animated signature themes."
+      },
+      "customBackground": {
+        "title": "Custom Background Image"
+      },
+      "customFont": {
+        "title": "Custom Fonts"
+      },
+      "liveSupport": {
+        "title": "Real-Time Live Support",
+        "description": "Skip the queue — chat directly with the developer via the in-app help desk and get support in real time."
+      },
+      "credentials": {
+        "title": "Automatic Steam Credentials Retrieval"
+      },
+      "multiAccount": {
+        "title": "Multi-Account Support",
+        "description": "Sign in and manage multiple Steam accounts at the same time."
+      },
+      "autoFarmCards": {
+        "title": "Trading Card Monitor",
+        "description": "SGI monitors your library and automatically starts farming any game that still has card drops remaining."
+      },
+      "gamesList": {
+        "title": "Automatic Games List Updates",
+        "description": "Your games list refreshes automatically every 15 minutes as you add and play games."
+      },
+      "multipleUnlockerGames": {
+        "title": "Unlock Achievements For Multiple Games",
+        "description": "Unlock achievements for several games at the same time in Achievement Unlocker instead of one at a time."
+      },
+      "freeGames": {
+        "title": "Free Game Redemption",
+        "description": "Automatically redeem free games on Steam the moment they become available — never miss a freebie."
+      },
+      "sellDupes": {
+        "title": "List Duplicate Items",
+        "description": "Easily list all duplicate inventory items for sale with a single click."
+      },
+      "customPresence": {
+        "title": "Custom Steam Status"
+      }
+    },
+    "tier": {
+      "mostPopular": "Most Popular",
+      "perMonth": "/month",
+      "everythingInCasualPlus": "Everything in casual, plus",
+      "currentPlan": "Current Plan",
+      "continueWithStripe": "Stripe",
+      "continueWithPaypal": "PayPal",
+      "processing": "Processing...",
+      "cancelAnytime": "Cancel Anytime",
+      "casual": {
+        "name": "Casual",
+        "discordRole": "Discord PRO Role",
+        "multiAccount": "3 Concurrent Accounts",
+        "multipleUnlockerGames": "Unlock 3 Games At Once"
+      },
+      "gamer": {
+        "name": "Gamer",
+        "freeGames": "Automatic Free Game Redemption",
+        "sellDupes": "List Duplicate Inventory Items",
+        "importTimings": "Import Achievement Unlock Timings",
+        "multipleUnlockerGames": "Unlock 32 Games At Once",
+        "multiAccount": "10 Concurrent Accounts"
+      }
+    },
+    "faq": {
+      "subscriptionNotActivated": {
+        "q": "I purchased PRO but my subscription is not activated?",
+        "a": "After checking out, you will receive an email containing your license key. Open the app, go to Settings → Subscription, paste your license key into the input field, and click Activate. If you are still experiencing issues, contact us via the help desk at the top-right of the app or at contact@steamgameidler.com."
+      },
+      "transferDevice": {
+        "q": "How do I transfer my license key to a new device?",
+        "a": "Your license key is tied to one device at a time. To transfer it, open the app on your new device, go to Settings → Subscription, enter your license key, and click Activate. A prompt will ask you to confirm the transfer. Once confirmed, your new device is active and the previous device loses access on its next launch. If you reinstalled the app on the same machine, no transfer is needed — your device is recognised by its hardware ID."
+      },
+      "cancel": {
+        "q": "How do I cancel my subscription?",
+        "a": "Go to Settings → Subscription → Manage Subscription, and follow the cancellation prompts. After cancellation, you will retain access to PRO benefits until the end of your current billing period."
+      },
+      "switchTier": {
+        "q": "Can I switch between tiers?",
+        "a": "Yes. Cancel your current subscription then re-subscribe to your desired tier following the standard subscription process."
+      },
+      "invoices": {
+        "q": "Where can I find invoices and receipts?",
+        "a": "You'll receive an email receipt after subscribing. For full billing history, go to Settings → Subscription → Manage Subscription."
+      },
+      "refund": {
+        "q": "What is the refund policy?",
+        "a": "PRO subscriptions are treated as donations and are generally non-refundable. Refunds are considered on a case-by-case basis. Contact us via the help desk at the top-right of the app or at contact@steamgameidler.com."
+      },
+      "chargeback": {
+        "q": "What happens if I file a chargeback?",
+        "a": "Fraudulent chargebacks significantly impact this small independent project. Filing one without prior communication may result in your access to this app being permanently revoked. If there was a billing error, we are always happy to work with you to get it sorted as fast as possible, so please contact us via the help desk at the top-right of the app or at contact@steamgameidler.com."
+      }
+    },
+    "modal": {
+      "footer": "Prices displayed are in USD and exclude taxes and currency conversion fees which may apply depending on your location and payment method."
+    },
+    "comparisonTable": {
+      "learnMoreFeatures": "Learn more about each feature"
+    }
+  },
+  "auth": {
+    "landing": {
+      "heading": "Sign in",
+      "subtitle": "Pick how you want to connect. You can add more accounts later.",
+      "agentButton": "Steam Sign-in",
+      "localButton": "Local Sign-in",
+      "localAlreadySignedIn": "A local Steam client account is already signed in — only one can be signed in at a time.",
+      "acknowledge": "By continuing, you agree to the <0>Terms of Service</0> and acknowledge that you have read our <1>Privacy Policy</1>."
+    },
+    "signIn": {
+      "title": "Sign in with Steam",
+      "usernameLabel": "Username",
+      "usernamePlaceholder": "Enter your Steam username",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Enter your Steam password",
+      "usernameRequired": "Enter your Steam username.",
+      "passwordRequired": "Enter your Steam password.",
+      "guardCode": {
+        "deviceTitle": "Check your Steam Mobile app",
+        "deviceDescription": "Enter the code from the Steam Mobile app.",
+        "emailTitle": "Check your email",
+        "emailDescription": "We sent a code to {{email}}. Enter it below.",
+        "confirmationTitle": "Confirm this sign-in",
+        "confirmationDescription": "Approve the sign-in request in your Steam Mobile app to continue.",
+        "codeLabel": "Steam Guard code",
+        "incorrectCode": "That code wasn't correct. Please try again.",
+        "submitButton": "Verify"
+      },
+      "qrCode": {
+        "scanLabel": "Or scan with your phone",
+        "instructions": "Use the Steam Mobile app to sign in via QR code.",
+        "scanned": "Approve it in the Steam Mobile app.",
+        "approved": "Approved. Signing you in...",
+        "newCode": "Use a new code"
+      },
+      "errors": {
+        "title": "Couldn't sign in",
+        "invalidCredentials": "Incorrect username or password.",
+        "denied": "Sign-in request denied in the Steam Mobile app. Please try again.",
+        "generic": "Something went wrong signing in. Please try again. ({{code}})"
+      }
+    },
+    "localSignIn": {
+      "title": "Choose an account",
+      "continueAs": "Continue as {{name}}",
+      "restartNotice": "Steam will restart and switch to {{name}}.",
+      "mostRecent": "Last signed in on this PC",
+      "lastUsed": "Last used {{when}}",
+      "noAccounts": "No Steam accounts were found on this device. Sign into the Steam client at least once, then refresh.",
+      "errors": {
+        "steamNotFound": "Couldn't find a local Steam installation.",
+        "loginVdfUnreadable": "Couldn't read this device's saved Steam accounts.",
+        "accountNotFound": "That account could no longer be found.",
+        "switchFailed": "Couldn't switch Steam accounts.",
+        "launchFailed": "Couldn't start the Steam client.",
+        "summaryUnavailable": "Couldn't load account details right now."
+      }
+    },
+    "hero": {
+      "idle": "Idle",
+      "farm": "Farm",
+      "unlock": "Unlock",
+      "claim": "Claim"
+    }
+  },
+  "dashboard": {
+    "sidebar": {
+      "goPro": {
+        "title": "Unlock PRO Perks"
+      },
+      "nav": {
+        "games": "Games",
+        "idling": "Idling",
+        "favorites": "Favorites",
+        "freeGames": "Free Games",
+        "cardFarming": "Card Farming",
+        "achievementUnlocker": "Achievement Unlocker",
+        "autoIdle": "Automatic Idler",
+        "inventoryManager": "Inventory Manager"
+      },
+      "signOut": {
+        "confirmTitle": "Sign out?",
+        "confirmDescription": "This will stop the automation currently running for {{name}} and sign that account out.",
+        "error": "Sign-out cleanup didn't fully finish, but you've been signed out."
+      },
+      "tier": {
+        "free": "Free"
+      },
+      "accountSwitcher": {
+        "modeAgent": "Signed in with Steam",
+        "modeLocal": "Local Steam client",
+        "switched": "Switched to {{name}}",
+        "steamRequired": "Steam needs to be running to switch to this account",
+        "addAccount": {
+          "trigger": "Add another account",
+          "capReached_one": "The {{tier}} plan allows {{count}} account signed in with Steam at a time. Sign out of one to add another, or upgrade for more.",
+          "capReached_other": "The {{tier}} plan allows {{count}} accounts signed in with Steam at a time. Sign out of one to add another, or upgrade for more.",
+          "capReachedMax": "You've reached the maximum number of accounts that can be signed in with Steam at the same time.",
+          "added": "Added {{name}}"
+        },
+        "reauth": {
+          "badge": "Signed in elsewhere",
+          "modalTitle": "Signed in on another device",
+          "modalDescription": "{{account}} was signed in on another device, so its automation has been paused. Sign in again to continue.",
+          "reconnect": "Reconnect",
+          "sessionReplacedExplainer": "This usually happens when another copy of Steam Game Idler, or a similar tool, signs in to this account. Reconnecting here signs that one out.",
+          "useDifferentMethod": "Use a different sign-in method",
+          "sessionEnded": {
+            "badge": "Sign-in needed",
+            "modalTitle": "Steam ended this session",
+            "modalDescription": "Steam signed {{account}} out, so everything running on it has been stopped. Sign in again to continue.",
+            "explainer": "This can happen after you change your Steam password or sign out of all devices.",
+            "signInAgain": "Sign in again"
+          }
+        }
+      }
+    },
+    "games": {
+      "unknownName": "App {{appId}}",
+      "carousels": {
+        "recommended": "Recommended"
+      },
+      "sort": {
+        "playtimeDesc": "Playtime (High to Low)",
+        "playtimeAsc": "Playtime (Low to High)",
+        "recentlyPlayedDesc": "Recently Played (Newest First)",
+        "recentlyPlayedAsc": "Recently Played (Oldest First)",
+        "achievementsDesc": "Completion (High to Low)",
+        "achievementsAsc": "Completion (Low to High)"
+      },
+      "empty": {
+        "title": "No games found",
+        "description": "This account doesn't own any games yet."
+      },
+      "errors": {
+        "title": "Couldn't load games",
+        "webApiUnavailable": "Couldn't load playtime data from Steam right now.",
+        "cacheIoFailed": "Couldn't read or write the games cache.",
+        "generic": "Something went wrong loading your games. Please try again. ({{code}})"
+      },
+      "privacyWarning": {
+        "title": "Some game data may be missing",
+        "description": "Your Steam profile or game details appear to be set to private, so playtime, recently played, and some games may be incomplete. Make your profile public, or add your own Steam Web API key in Settings to fix this.",
+        "changeSettings": "Change privacy settings",
+        "useOwnKey": "Add my own API key"
+      }
+    },
+    "playingElsewhere": {
+      "title": "Paused while you play",
+      "description": "This account is playing a game in another Steam session, so idling and automation are paused. Everything resumes automatically about a minute after that session stops playing.",
+      "descriptionWithGame": "This account is playing {{game}} in another Steam session, so idling and automation are paused. Everything resumes automatically about a minute after that session stops playing."
+    },
+    "idling": {
+      "stopAll": "Stop all",
+      "sections": {
+        "manual": "Manually idled",
+        "other": "Other"
+      },
+      "empty": {
+        "title": "Nothing's idling right now.",
+        "description": "Go to the Games page, hover over a game and press the play button. It'll show up here while it idles.",
+        "browseGames": "Browse your games",
+        "setUpAutoIdle": "Set up Automatic Idler"
+      },
+      "errors": {
+        "startFailed": "Couldn't start idling this game.",
+        "maxPlaytimeCapReached": "This game has already reached its max playtime cap.",
+        "generic": "Something went wrong updating idling. Please try again. ({{code}})"
+      }
+    },
+    "favorites": {
+      "confirmClear": {
+        "title": "Clear all favorites?",
+        "description": "This will remove all {{count}} games from your favorites list."
+      },
+      "empty": {
+        "title": "No favorites yet",
+        "description": "Add games from the All Games tab to see them here."
+      },
+      "errors": {
+        "title": "Couldn't update favorites",
+        "cacheIoFailed": "Couldn't read or write the favorites cache.",
+        "generic": "Something went wrong updating favorites. Please try again. ({{code}})"
+      }
+    },
+    "freeGames": {
+      "actions": {
+        "claim": "Claim",
+        "claimed": "Claimed"
+      },
+      "outcomes": {
+        "alreadyOwned": "You already own this game."
+      },
+      "empty": {
+        "title": "No free games right now",
+        "description": "Check back later — Steam periodically offers games for free."
+      },
+      "errors": {
+        "title": "Couldn't load free games",
+        "scrapeFailed": "Couldn't check Steam for free games right now.",
+        "storeLoginFailed": "Couldn't sign in to the Steam Store. Please try again.",
+        "storeLogoutFailed": "Couldn't sign out of the Steam Store. Please try again.",
+        "claimFailed": "Couldn't claim this game. It may no longer be free, or you may already own it.",
+        "generic": "Something went wrong loading free games. Please try again. ({{code}})"
+      },
+      "notifications": {
+        "title": "Free Games Available!",
+        "bodyOne": "{{name}} is free on Steam right now.",
+        "bodyMany": "{{count}} new free games are available on Steam."
+      },
+      "autoRedeem": {
+        "success": "Auto-redeemed {{name}}",
+        "failure": "Couldn't auto-redeem {{name}}"
+      },
+      "correction": {
+        "granted": "{{name}} was actually claimed successfully — the earlier failure notice was wrong."
+      }
+    },
+    "achievements": {
+      "tabs": {
+        "achievements": "Achievements",
+        "statistics": "Statistics"
+      },
+      "header": {
+        "viewOnSteam": "View on Steam",
+        "viewOnSteamDb": "View on SteamDB"
+      },
+      "protectedAlert": {
+        "title": "Some items are protected",
+        "description": "Achievements or statistics marked as protected are set by the game's server and can't be changed by clients."
+      },
+      "unlockedCount": "{{unlocked}} / {{total}} unlocked",
+      "noDescription": "No description",
+      "protectedTooltip": "Set by the game server and can't be changed by clients.",
+      "edited": "Edited",
+      "pendingChanges_one": "{{count}} change",
+      "pendingChanges_other": "{{count}} changes",
+      "incrementOnly": "Only increases",
+      "incrementOnlyTooltip": "This statistic can only increase, never decrease.",
+      "sets": {
+        "baseGame": "Base game",
+        "dlc": "DLC",
+        "notOwned": "Not owned"
+      },
+      "archived": {
+        "badge": "Archived"
+      },
+      "views": {
+        "all": "All achievements"
+      },
+      "filters": {
+        "all": "All",
+        "locked": "Locked",
+        "unlocked": "Unlocked"
+      },
+      "selection": {
+        "selectAll": "Select all"
+      },
+      "sort": {
+        "percent": "Global unlock %",
+        "unlocked": "Unlocked first",
+        "locked": "Locked first",
+        "unprotected": "Unprotected first",
+        "protected": "Protected first"
+      },
+      "rarity": {
+        "common": "Common",
+        "uncommon": "Uncommon",
+        "rare": "Rare",
+        "epic": "Epic",
+        "legendary": "Legendary"
+      },
+      "actions": {
+        "unlock": "Unlock",
+        "lock": "Lock",
+        "unlockAll": "Unlock all",
+        "lockAll": "Lock all",
+        "saveChanges": "Save changes",
+        "resetAll": "Reset all"
+      },
+      "confirmUnlockAll": {
+        "title": "Unlock all achievements?",
+        "description": "This will unlock every achievement for this game that isn't already unlocked or protected."
+      },
+      "confirmLockAll": {
+        "title": "Lock all achievements?",
+        "description": "This will lock every achievement for this game that isn't already locked or protected."
+      },
+      "confirmApplyChanges": {
+        "title": "Apply staged changes?",
+        "descriptionBoth": "This will unlock {{unlockCount}} and lock {{lockCount}} staged achievement(s).",
+        "descriptionUnlockOnly": "This will unlock {{unlockCount}} staged achievement(s).",
+        "descriptionLockOnly": "This will lock {{lockCount}} staged achievement(s)."
+      },
+      "confirmResetStats": {
+        "title": "Reset all statistics?",
+        "description": "This will reset every statistic for this game back to its default value. This can't be undone."
+      },
+      "empty": {
+        "title": "No achievements",
+        "description": "This game doesn't have any achievements."
+      },
+      "emptyStats": {
+        "title": "No statistics",
+        "description": "This game doesn't have any statistics."
+      },
+      "searchNoResults": {
+        "title": "No results match your search",
+        "description": "Try a different search term."
+      },
+      "toasts": {
+        "achievementUnlocked": "\"{{name}}\" unlocked",
+        "achievementLocked": "\"{{name}}\" locked",
+        "bulkUnlocked_one": "{{count}} achievement unlocked",
+        "bulkUnlocked_other": "{{count}} achievements unlocked",
+        "bulkLocked_one": "{{count}} achievement locked",
+        "bulkLocked_other": "{{count}} achievements locked",
+        "bulkNoChanges": "Nothing to change - already in the requested state, or protected.",
+        "changesApplied_one": "{{count}} achievement updated",
+        "changesApplied_other": "{{count}} achievements updated",
+        "applyPartialFailure": "Some staged achievements couldn't be updated. Please try again.",
+        "statsSaved_one": "{{count}} statistic updated",
+        "statsSaved_other": "{{count}} statistics updated",
+        "statsReset": "Statistics reset"
+      },
+      "errors": {
+        "title": "Couldn't load achievements",
+        "invalidApp": "This app doesn't have achievement data.",
+        "achievementNotFound": "That achievement couldn't be found.",
+        "statNotFound": "That statistic couldn't be found.",
+        "protected": "That value is set by the game server and can't be changed.",
+        "unsupportedGameCoordinator": "This game isn't supported for achievements when signed in with Steam - use your local Steam client instead.",
+        "unsupportedGameCoordinatorLinux": "This game isn't supported for achievements when signed in with Steam.",
+        "generic": "Something went wrong loading achievements. Please try again. ({{code}})"
+      }
+    },
+    "cardFarming": {
+      "actions": {
+        "stop": "Stop farming"
+      },
+      "confirmClearWhitelist": {
+        "title": "Clear the card farming whitelist?",
+        "description": "This will remove all {{count}} games from the card farming whitelist. Farming will go back to considering every owned game with drops."
+      },
+      "multiGameNotice": {
+        "title": "Farming multiple games at once?",
+        "description": "Farming multiple games at the same time can slow down how quickly cards drop per game. If you don't see any cards drop for a while, try turning this back off."
+      },
+      "presenceNotice": {
+        "title": "Before you start",
+        "description": "Your status is set to Online, so your friends may get a notification each time Card Farming starts a game. You should consider switching to Offline instead.",
+        "stayOnline": "Stay online and start",
+        "appearOffline": "Appear offline and start",
+        "dontShowAgain": "Don't show this again",
+        "offlineFailed": "Couldn't change your status. Farming started with your current status."
+      },
+      "confirmClearBlacklist": {
+        "title": "Clear the card farming blacklist?",
+        "description": "This will remove all {{count}} games from the card farming blacklist."
+      },
+      "tabs": {
+        "gamesWithDrops": "Games With Drops",
+        "whitelisted": "Whitelisted",
+        "blacklisted": "Blacklisted"
+      },
+      "sort": {
+        "dropsDesc": "Drops Remaining (High to Low)",
+        "dropsAsc": "Drops Remaining (Low to High)"
+      },
+      "browseEmpty": {
+        "title": "No card drops remaining",
+        "description": "Every owned game's card drops are either fully farmed or none are available right now."
+      },
+      "whitelistEmpty": {
+        "title": "No whitelisted games",
+        "description": "Add games from the Games With Drops tab to farm only those games. Leave it empty to farm all games with drops."
+      },
+      "blacklistEmpty": {
+        "title": "No blacklisted games",
+        "description": "Add games from the Games With Drops tab to never farm those games. Leave it empty to farm all games with drops."
+      },
+      "connect": {
+        "automaticDescription": "Signs in to Steam Community automatically to check for drops."
+      },
+      "progress": {
+        "activeTitleReadyFarm": "Farming ({{count}})",
+        "activeTitleBulkIdle": "Building playtime ({{count}})",
+        "queueTitle": "Up next ({{count}})",
+        "dropsRemaining_one": "{{count}} drop remaining",
+        "dropsRemaining_other": "{{count}} drops remaining",
+        "accumulatingPlaytime": "{{hours}}h / {{threshold}}h until farmable",
+        "waitingTurn": "Waiting its turn",
+        "completedNoDropsRemaining": "Nothing left to farm",
+        "completedRefundWindow": "Still inside the refund window (farmable again {{date}})",
+        "completedSkippedUnplayed": "Removed from whitelist: has no recorded playtime",
+        "completedSkippedPlayed": "Removed from whitelist: already has playtime",
+        "droppedThisSession": "Dropped this session",
+        "stillToDrop": "Still to drop",
+        "cardsProgress": "{{done}} of {{total}} cards",
+        "nextDropCheck": "Next drop check"
+      },
+      "errors": {
+        "title": "Couldn't update card farming",
+        "sessionFailed": "Couldn't sign in to Steam Community. Check your cookies and try again.",
+        "sessionExpired": "Your Steam Community session has expired. Please reconnect to continue.",
+        "scrapeFailed": "Couldn't check Steam for card drops right now.",
+        "familyViewRestricted": "Family View is enabled on your Steam account. Disable Family View and try again.",
+        "generic": "Something went wrong updating card farming. Please try again. ({{code}})"
+      },
+      "settings": {
+        "hoursUntilFarmable": {
+          "title": "Hours until farmable",
+          "description": "How many hours of playtime games need before they are considered farmable. Set to 0 to skip straight to farming."
+        },
+        "allowMultiGameFarming": {
+          "title": "Farm multiple games at once",
+          "description": "Farm up to 32 games concurrently instead of one at a time. In some cases this can cause cards to drop significantly slower."
+        },
+        "skipRefundableGames": {
+          "title": "Skip refundable games",
+          "description": "Don't farm a game while it's still inside Steam's refund window (bought within the last 14 days with under 2 hours of playtime)."
+        },
+        "autoFarmCards": {
+          "title": "Monitor for card drops",
+          "description": "Periodically check for owned games with card drops remaining and automatically start farming them."
+        },
+        "skipNoPlaytime": {
+          "title": "Skip unplayed games",
+          "description": "Don't farm games that have zero recorded playtime."
+        },
+        "farmUnplayedOnly": {
+          "title": "Unplayed games only",
+          "description": "Only farm games that have zero recorded playtime."
+        },
+        "nextTask": {
+          "title": "Start another task when done",
+          "description": "Once farming finishes, automatically start another automation."
+        }
+      }
+    },
+    "achievementUnlocker": {
+      "addAllToQueue": "Add all to queue",
+      "confirmAddAllToQueue": {
+        "title": "Add all {{count}} games to the queue?",
+        "description": "Each game needs to be scanned for achievements, which can take a long time for a large library. Manually adding games is recommended."
+      },
+      "confirmClearQueue": {
+        "title": "Clear the achievement unlocker queue?",
+        "description": "This will remove all {{count}} games from the achievement unlocker queue."
+      },
+      "empty": {
+        "description": "Add games from the All Games tab to queue them for automatic achievement unlocking."
+      },
+      "settings": {
+        "idle": {
+          "title": "Idle while unlocking",
+          "description": "Idles the game while its achievements are being unlocked."
+        },
+        "hidden": {
+          "title": "Skip hidden achievements",
+          "description": "Don't unlock achievements Steam has flagged as hidden."
+        },
+        "multipleGames": {
+          "title": "Run multiple games at once",
+          "description": "Work through up to {{count}} queued games concurrently instead of one at a time."
+        },
+        "interval": {
+          "title": "Unlock interval",
+          "description": "Wait a random delay between {{min}} and {{max}} minutes between unlocks.",
+          "to": "to"
+        },
+        "schedule": {
+          "title": "Only unlock during a schedule",
+          "description": "Only unlock achievements between the times below."
+        },
+        "nextTask": {
+          "description": "Once the queue is empty, automatically start another automation."
+        }
+      },
+      "order": {
+        "unlocksAt": "Unlocks at",
+        "rightAway": "Right away",
+        "timeRange": "{{from}} – {{to}}",
+        "timeline": {
+          "start": "The unlocker starts this game",
+          "end": "The unlocker finished the game"
+        },
+        "wait": {
+          "firstNone": "Unlock right after the game starts",
+          "firstSet": "Wait {{duration}} after the game starts",
+          "random": "Random wait",
+          "randomRange": "Random wait · {{min}}–{{max}} min",
+          "none": "No wait",
+          "set": "Wait {{duration}}",
+          "firstHeading": "Wait before the first unlock",
+          "heading": "Wait before unlocking <name>{{name}}</name>",
+          "randomPreset": "Random",
+          "custom": "Custom",
+          "hours": "Hours",
+          "hoursUnit": "h",
+          "minutesUnit": "m"
+        },
+        "duration": {
+          "days": "{{d}}d",
+          "daysHours": "{{d}}d {{h}}h",
+          "hours": "{{h}}h",
+          "hoursMinutes": "{{h}}h {{m}}m",
+          "minutes": "{{m}} min",
+          "minutesSeconds": "{{m}}m {{s}}s",
+          "seconds": "{{s}}s"
+        },
+        "summary": {
+          "unlocking": "Unlocking {{included}} of {{total}}",
+          "finishes": "finishes in about <time>{{duration}}</time>",
+          "finishesRange": "finishes in about <time>{{from}}</time> to <time>{{to}}</time>"
+        },
+        "reset": "Reset",
+        "skipped": "Skipped",
+        "protectedSection": {
+          "title": "Protected achievements"
+        },
+        "unownedDlcSection": {
+          "title": "From DLC you don't own"
+        },
+        "archivedSection": {
+          "title": "Archived achievements"
+        },
+        "protectedAlert": {
+          "description": "The achievement unlocker skips games with any protected achievements, so this order won't be used."
+        },
+        "empty": {
+          "title": "Nothing left to order",
+          "description": "This game has no remaining achievements to unlock."
+        },
+        "toasts": {
+          "saved": "Achievement order saved"
+        }
+      },
+      "importTimings": {
+        "title": "Import timings",
+        "cardTitle": "Copy another player",
+        "cardDescription": "Fetch another player's real achievement unlock times and use them",
+        "description": "Fetch another player's real achievement unlock times and use them to derive realistic per-achievement delays.",
+        "inputPlaceholder": "SteamID64, profile URL, or vanity URL",
+        "importButton": "Import",
+        "success_one": "Imported timing for {{count}} achievement",
+        "success_other": "Imported timings for {{count}} achievements",
+        "errors": {
+          "profilePrivate": "That profile is private or has no public achievement data.",
+          "noTimestamps": "That player has no achievements with unlock timestamps for this game.",
+          "notFound": "Couldn't resolve that profile.",
+          "generic": "Couldn't import timings right now. Please try again. ({{code}})"
+        }
+      },
+      "progress": {
+        "scanning": "Checking queued games for achievements to unlock",
+        "scanningCount": "{{checked}} of {{total}} checked",
+        "remaining_one": "{{count}} achievement remaining",
+        "remaining_other": "{{count}} achievements remaining",
+        "starting": "Starting…",
+        "waitingForSchedule": "Waiting for the scheduled unlock window",
+        "waitingForSteam": "Waiting for Steam",
+        "waitingGames_one": "{{games}} is still in the queue and will be checked again.",
+        "waitingGames_other": "{{games}} are still in the queue and will be checked again.",
+        "retryingIn": "Checking again in {{time}}",
+        "currentGame": "Current game",
+        "upNext": "Up next",
+        "completedCount": "{{unlocked}}/{{total}} unlocked",
+        "completedMaxUnlocksReached": "{{unlocked}}/{{total}} unlocked (max unlocks reached)",
+        "completedMaxPlaytimeWithCount": "{{unlocked}}/{{total}} unlocked (max playtime reached)",
+        "completedMaxPlaytime": "Max playtime reached",
+        "completedNothingToUnlock": "Nothing left to unlock",
+        "unlockedThisSession": "Unlocked this session",
+        "stillToUnlock": "Still to unlock",
+        "achievementsProgress": "{{done}} of {{total}} achievements",
+        "nextAchievement": "Next achievement"
+      },
+      "errors": {
+        "title": "Couldn't update the achievement unlocker",
+        "queueCacheIoFailed": "Couldn't read or write the achievement unlocker queue.",
+        "settingsIoFailed": "Couldn't read or write the achievement unlocker settings.",
+        "orderIoFailed": "Couldn't read or write this game's achievement order.",
+        "libraryRunInProgress": "Can't start while every game's achievements are being locked or unlocked from the Debug settings. Try again once that finishes."
+      }
+    },
+    "autoIdle": {
+      "confirmClearQueue": {
+        "title": "Clear the automatic idler queue?",
+        "description": "This will remove all {{count}} games from the automatic idler queue."
+      },
+      "empty": {
+        "description": "Add games from the All Games tab to idle them automatically whenever the app starts."
+      },
+      "errors": {
+        "title": "Couldn't update automatic idler",
+        "cacheIoFailed": "Couldn't read or write the automatic idler queue.",
+        "generic": "Something went wrong updating automatic idler. Please try again. ({{code}})"
+      }
+    },
+    "inventoryManager": {
+      "fetchPrice": "Get market price",
+      "fetchingPrice": "Fetching price…",
+      "priceLabel": "Item price",
+      "unlockHint": "Click to unlock and list it",
+      "badgeLevel": "Badge level {{level}}",
+      "noBadge": "No badge crafted",
+      "connect": {
+        "automaticDescription": "Signs in to Steam Community automatically to load your inventory."
+      },
+      "actions": {
+        "listSelected": "List selected ({{count}})",
+        "sellAll": "List all ({{count}})",
+        "sellDupes": "List dupes",
+        "removeListings": "Remove listings",
+        "lockItem": "Lock this item so it's never listed automatically",
+        "listOne": "List",
+        "cardExchange": "View on SteamCardExchange"
+      },
+      "confirm": {
+        "listSelected": {
+          "title": "List {{count}} selected items?",
+          "description": "This will list every selected item at its entered price. Estimated time: {{time}}. Leave the app running until the process is complete."
+        },
+        "sellAll": {
+          "title": "List all visible items?",
+          "description": "This will fetch a market price for and list up to {{count}} items currently shown, using your inventory settings' price preference and price limits. Estimated time: {{time}}. Leave the app running until the process is complete."
+        },
+        "sellDupes": {
+          "title": "List duplicate items?",
+          "description": "This will fetch a market price for and list up to {{count}} duplicate items (keeping one copy of each), using your inventory settings' price preference and price limits. Estimated time: {{time}}. Leave the app running until the process is complete."
+        },
+        "removeListings": {
+          "title": "Remove all active listings?",
+          "description": "This will cancel every active market listing for this account. Estimated time: {{time}}. Leave the app running until the process is complete."
+        }
+      },
+      "filter": {
+        "label": "Filter",
+        "cards": "Trading cards",
+        "foil": "Foil",
+        "backgrounds": "Backgrounds",
+        "emoticons": "Emoticons",
+        "boosters": "Booster packs",
+        "sale": "On sale",
+        "dupes": "Duplicates",
+        "badge": "Has badge",
+        "locked": "Locked",
+        "selected": "Selected"
+      },
+      "sort": {
+        "label": "Sort by",
+        "game-asc": "Game (A-Z)",
+        "game-desc": "Game (Z-A)",
+        "badge-desc": "Badge level"
+      },
+      "empty": {
+        "title": "No items found",
+        "description": "No marketable items match the current search and filters.",
+        "noItemsDescription": "You don't have any items that can be sold on the Steam Market yet. Trading cards you farm will show up here."
+      },
+      "priceData": {
+        "sellOrders": "Sell orders",
+        "buyOrders": "Buy orders"
+      },
+      "settings": {
+        "currency": {
+          "title": "Currency",
+          "description": "Which currency to fetch market prices and list items in."
+        },
+        "pricePreference": {
+          "title": "Default price",
+          "description": "Which price to use when bulk listing items.",
+          "options": {
+            "highestBuyOrder": "Highest buy order",
+            "lowestSellOrder": "Lowest sell order"
+          }
+        },
+        "priceAdjustment": {
+          "title": "Price adjustment",
+          "description": "Adds {{value}} to every listing price, whether auto-filled or entered manually."
+        },
+        "sellLimit": {
+          "title": "Price limit",
+          "description": "Only list items priced between {{min}} and {{max}}."
+        },
+        "sellDelay": {
+          "title": "Listing delay",
+          "description": "Wait {{value}} seconds between listing each item to avoid rate limiting."
+        }
+      },
+      "toasts": {
+        "listed_one": "{{count}} item listed",
+        "listed_other": "{{count}} items listed",
+        "listFailed_one": "{{count}} item couldn't be listed",
+        "listFailed_other": "{{count}} items couldn't be listed",
+        "noListings": "You have no active market listings.",
+        "removedListings": "Removed {{count}} of {{total}} listings",
+        "removeFailed": "Couldn't remove any listings.",
+        "noneEligible": "No items were eligible to list - check your inventory settings' price limits.",
+        "priceFetchCooldown": "Please wait {{seconds}} seconds before fetching more item prices",
+        "itemLocked": "This item is locked and can't be listed.",
+        "priceOutOfRange": "{{price}} is outside your configured price limit ({{min}}-{{max}}).",
+        "skippedLocked_one": "Skipped {{count}} locked item",
+        "skippedLocked_other": "Skipped {{count}} locked items",
+        "skippedOutOfRange_one": "Skipped {{count}} item outside your price limit",
+        "skippedOutOfRange_other": "Skipped {{count}} items outside your price limit"
+      },
+      "errors": {
+        "title": "Couldn't update your inventory",
+        "fetchFailed": "Couldn't load your Steam Community inventory right now.",
+        "cacheIoFailed": "Couldn't read or write the inventory cache.",
+        "priceFetchFailed": "Couldn't fetch a market price right now.",
+        "priceRateLimited": "Steam is rate-limiting price lookups right now. Please try again in a moment.",
+        "itemNotFound": "That item couldn't be found in your cached inventory.",
+        "listingsFetchFailed": "Couldn't read your active market listings.",
+        "settingsIoFailed": "Couldn't read or write your inventory settings.",
+        "generic": "Something went wrong updating your inventory. Please try again. ({{code}})"
+      }
+    },
+    "settings": {
+      "title": "Settings",
+      "general": {
+        "title": "General",
+        "account": {
+          "displayNameLabel": "Display name",
+          "steamIdLabel": "Steam ID"
+        },
+        "apiKey": {
+          "label": "Steam Web API key",
+          "placeholder": "Leave blank to use the built-in key",
+          "description": "Overrides the app's built-in Steam Web API key."
+        },
+        "antiAway": {
+          "label": "Always online",
+          "description": "Periodically refresh your Steam status so you don't appear away while idling."
+        },
+        "runAtStartup": {
+          "label": "Run at startup",
+          "description": "Automatically launch Steam Game Idler when you sign in to Windows."
+        },
+        "startMinimized": {
+          "label": "Start minimized",
+          "description": "Launch Steam Game Idler hidden in the system tray instead of showing the window."
+        },
+        "closeToTray": {
+          "label": "Close to tray",
+          "description": "Keep Steam Game Idler running in the system tray when you close the window."
+        },
+        "autoUpdateGamesList": {
+          "label": "Automatically update games list",
+          "description": "Silently refresh your games list in the background so it stays current without a manual refresh."
+        },
+        "personaState": {
+          "label": "Online status",
+          "description": "Choose what status you appear as to friends while signed in.",
+          "options": {
+            "online": "Online",
+            "busy": "Busy",
+            "away": "Away",
+            "snooze": "Snooze",
+            "lookingToTrade": "Looking to Trade",
+            "lookingToPlay": "Looking to Play",
+            "invisible": "Invisible",
+            "offline": "Offline"
+          }
+        },
+        "customIdleStatus": {
+          "label": "Custom status while idling",
+          "description": "Replace the \"Playing [game]\" text your friends see while idling with your own custom message.",
+          "placeholder": "e.g. Farming trading cards"
+        },
+        "gamesOnly": {
+          "label": "Show games only",
+          "description": "Only show owned games and family-shared games in your library, hiding DLC, soundtracks, videos, and tools. Changing this refreshes your games list."
+        },
+        "language": {
+          "label": "Language",
+          "description": "Choose the app's display language.",
+          "helpTranslate": "Help translate SGI"
+        }
+      },
+      "subscription": {
+        "title": "Subscription",
+        "status": {
+          "title": "Subscription status",
+          "description": "Your current plan and billing details.",
+          "inactive": "Inactive",
+          "renewsOn": "Renews on {{date}}",
+          "cancelsOn": "Cancels on {{date}}",
+          "manage": "Manage subscription",
+          "upgrade": "Upgrade"
+        },
+        "licenseKey": {
+          "title": "License key",
+          "description": "Activate a license key to unlock Pro features on this device.",
+          "placeholder": "Enter your license key",
+          "activate": "Activate",
+          "activated": "License key activated",
+          "copied": "License key copied"
+        },
+        "transfer": {
+          "title": "Transfer this license key?",
+          "description": "This license key is already active on another device. Activating it here will deactivate it there."
+        },
+        "errors": {
+          "activationFailed": "Couldn't activate this license key. Check that it's correct and try again."
+        }
+      },
+      "customization": {
+        "title": "Customization",
+        "tooltips": {
+          "label": "Disable tooltips",
+          "description": "Hide hover tooltips throughout the app."
+        },
+        "gameCardStyle": {
+          "label": "Game card style",
+          "description": "Choose the shape of the game cards in your game lists.",
+          "cover": "Cover art",
+          "banner": "Banner art"
+        },
+        "background": {
+          "label": "Background image",
+          "description": "Use a custom image as the app's background.",
+          "choose": "Choose image",
+          "saved": "Background updated",
+          "cleared": "Background cleared",
+          "signatureThemeActive": "Background images are disabled while a signature theme is active."
+        },
+        "theme": {
+          "label": "Theme",
+          "description": "Choose a color theme for the app.",
+          "saved": "Theme updated",
+          "names": {
+            "default": "Default",
+            "blue": "Blue",
+            "red": "Red",
+            "purple": "Purple",
+            "pink": "Pink",
+            "orange": "Orange",
+            "black": "Black",
+            "white": "White",
+            "synthwave": "Synthwave",
+            "aurora": "Aurora",
+            "nebula": "Nebula",
+            "terminal": "Terminal",
+            "ember": "Ember",
+            "abyss": "Abyss",
+            "sugarDay": "Sugar Day",
+            "sugarNight": "Sugar Night",
+            "sakura": "Sakura",
+            "lofiRain": "Lo-fi Rain",
+            "fireflies": "Fireflies",
+            "holo": "Holo",
+            "blackHole": "Black Hole",
+            "lavaLamp": "Lava Lamp",
+            "circuit": "Circuit",
+            "luxe": "Luxe",
+            "arcade": "Arcade"
+          }
+        },
+        "font": {
+          "label": "Font",
+          "description": "Choose the app's font.",
+          "saved": "Font updated"
+        },
+        "errors": {
+          "backgroundInvalid": "That image couldn't be used - check the file type and size and try again.",
+          "generic": "Something went wrong updating customization settings. Please try again. ({{code}})"
+        }
+      },
+      "steamCredentials": {
+        "title": "Steam Credentials",
+        "description": "Steam credentials are required in order to use the Card Farming and Inventory Manager features.",
+        "agentModeNote": "Not needed. This account signs in via Steam and gets its Steam Community session automatically.",
+        "automaticDescription": "Signs in to Steam Community automatically and saves the cookies here.",
+        "errors": {
+          "storeIoFailed": "Couldn't read or write your saved Steam credentials.",
+          "generic": "Something went wrong updating your Steam credentials. Please try again. ({{code}})"
+        }
+      },
+      "freeGames": {
+        "notifications": {
+          "label": "Free game notifications",
+          "description": "Get a notification when a new free game is available on Steam."
+        },
+        "autoRedeem": {
+          "label": "Auto-redeem free games",
+          "description": "Automatically claim newly-discovered free games for this account.",
+          "signIn": "Sign in to Steam",
+          "reauthenticate": "Reauthenticate",
+          "sessionEstablished": "Signed in to the Steam Store",
+          "sessionCleared": "Signed out of the Steam Store"
+        },
+        "errors": {
+          "ioFailed": "Couldn't read or write this account's free-games settings.",
+          "generic": "Something went wrong updating your free-games settings. Please try again. ({{code}})"
+        }
+      },
+      "gameSettings": {
+        "title": "Game Settings",
+        "maxPlaytimeSection": "Playtime",
+        "maxPlaytimeScopeNote": "Applies everywhere a game can be idled - manual and automatic idling, achievement unlocker, and card farming.",
+        "idlingScopeNote": "Only applies to manually and automatically idled games - achievement unlocker has its own separate cap below.",
+        "globalMaxPlaytime": {
+          "label": "Max playtime (all games)",
+          "description": "Automatically stop a game, and remove it from queues, once its total playtime reaches this many minutes."
+        },
+        "maxPlaytime": {
+          "label": "Max playtime",
+          "description": "Automatically stop this game, and remove it from queues, once its total playtime reaches this many minutes. Overrides the value above, if set."
+        },
+        "globalMaxIdleTime": {
+          "label": "Max idle time (all games)",
+          "description": "Automatically stop idling after this many minutes."
+        },
+        "maxIdleTime": {
+          "label": "Max idle time",
+          "description": "Automatically stop idling this game after this many minutes. Overrides the value above, if set."
+        },
+        "maxAchievementUnlocks": {
+          "label": "Max achievement unlocks",
+          "description": "Stop the achievement unlocker on this game after unlocking this many achievements."
+        },
+        "errors": {
+          "generic": "Something went wrong updating your game settings. Please try again. ({{code}})"
+        }
+      },
+      "keybinds": {
+        "title": "Keybinds",
+        "zoom": "Zoom",
+        "zoomIn": "Zoom in",
+        "zoomOut": "Zoom out",
+        "resetZoom": "Reset zoom",
+        "scrollUp": "Scroll up",
+        "scrollDown": "Scroll down",
+        "navigation": "Navigation",
+        "nextPage": "Next page",
+        "prevPage": "Previous page",
+        "openSearch": "Open search",
+        "toggleSettings": "Toggle settings",
+        "toggleSidebar": "Toggle sidebar"
+      },
+      "help": {
+        "title": "Help",
+        "troubleshooting": "Troubleshooting"
+      },
+      "debug": {
+        "title": "Debug",
+        "system": {
+          "os": "{{osVersion}} ({{arch}})",
+          "portable": "Portable build",
+          "installed": "Installed build"
+        },
+        "logs": {
+          "viewFile": "View log file",
+          "clear": "Clear logs",
+          "cleared": "Logs cleared",
+          "empty": "No log entries yet"
+        },
+        "settingsFile": {
+          "viewFile": "Open settings file"
+        },
+        "exportSettings": {
+          "button": "Export settings",
+          "success": "Settings copied to clipboard",
+          "error": "Couldn't export settings"
+        },
+        "resetSettings": {
+          "button": "Reset settings",
+          "success": "Settings reset to defaults",
+          "confirmTitle": "Reset settings to defaults?",
+          "confirmDescription": "Resets your Steam Web API key override and, if you're signed in, this account's achievement unlocker, inventory manager, card farming, and free games settings back to their defaults. Your signed-in accounts stay signed in."
+        },
+        "clearData": {
+          "button": "Clear data",
+          "confirmTitle": "Clear all local data?",
+          "confirmDescription": "Signs every account out, stops any running automation, clears logs, and clears locally-stored app data on this device (recent searches, inventory locks, etc.). This can't be undone."
+        },
+        "lockAllAchievements": {
+          "button": "Lock all app achievements",
+          "confirmTitle": "Lock every achievement in every app?",
+          "confirmDescription": "Locks every achievement in every app this account owns (games, mods, tools and more). This can take several minutes, or even hours for a large library, and can't be undone.",
+          "success": "Locked {{achievements}} achievements across {{games}} apps",
+          "partial": "Locked {{achievements}} achievements across {{games}} apps. {{failed}} apps couldn't be updated - check the log for details."
+        },
+        "allAchievementsRun": {
+          "running": "Working through your library. Keep the app open until this finishes.",
+          "progress": "{{completed}} of {{total}} apps done · {{achievements}} achievements changed. Keep the app open until this finishes."
+        },
+        "unlockAllAchievements": {
+          "button": "Unlock all app achievements",
+          "confirmTitle": "Unlock every achievement in every app?",
+          "confirmDescription": "Unlocks every achievement in every app this account owns (games, mods, tools and more). This can take several minutes, or even hours for a large library.",
+          "success": "Unlocked {{achievements}} achievements across {{games}} apps",
+          "partial": "Unlocked {{achievements}} achievements across {{games}} apps. {{failed}} apps couldn't be updated - check the log for details."
+        },
+        "errors": {
+          "logIoFailed": "Couldn't read or write the log file.",
+          "achievementUnlockerRunning": "Stop the achievement unlocker first - it would undo or fight over the same achievements.",
+          "libraryRunInProgress": "Every game's achievements are already being locked or unlocked. Wait for that to finish first."
+        }
+      },
+      "footer": {
+        "version": "Steam Game Idler v{{version}}",
+        "github": "View source on GitHub"
+      },
+      "errors": {
+        "title": "Couldn't load settings",
+        "ioFailed": "Couldn't read or write your settings file.",
+        "apiKeyInvalid": "Steam rejected that API key. Double-check it and try again.",
+        "credentialStoreFailed": "Couldn't access the Windows Credential Manager to store your API key.",
+        "generic": "Something went wrong updating settings. Please try again. ({{code}})"
+      }
+    }
+  }
+}

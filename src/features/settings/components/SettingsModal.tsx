@@ -1,0 +1,438 @@
+import type { TranslationKey } from '@/i18n'
+import type { SettingsTab } from '@/shared/stores/settingsModalStore'
+import type { ComponentType, ReactNode } from 'react'
+import { getVersion } from '@tauri-apps/api/app'
+import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import {
+  TbAdjustments,
+  TbAward,
+  TbBug,
+  TbBuildingStore,
+  TbCards,
+  TbChevronRight,
+  TbCreditCard,
+  TbGift,
+  TbHelpCircle,
+  TbKey,
+  TbKeyboard,
+  TbPalette,
+  TbSettings,
+} from 'react-icons/tb'
+import { useAgentOwnershipSettings } from '../hooks/useAgentOwnershipSettings'
+import { useSettingsModal } from '../hooks/useSettingsModal'
+import { useSteamCredentialsSettings } from '../hooks/useSteamCredentialsSettings'
+import { CustomizationSettingsTab } from './CustomizationSettingsTab'
+import { DebugSettingsTab } from './DebugSettingsTab'
+import { FreeGamesSettingsTab } from './FreeGamesSettingsTab'
+import { GameSettingsTab } from './game-settings/GameSettingsTab'
+import { GeneralSettingsTab } from './GeneralSettingsTab'
+import { HelpSettingsTab } from './help/HelpSettingsTab'
+import { KeybindsSettingsTab } from './KeybindsSettingsTab'
+import { SteamCredentialsDocsLink, SteamCredentialsTab } from './SteamCredentialsTab'
+import { SubscriptionSettingsTab } from './SubscriptionSettingsTab'
+import {
+  cn,
+  Modal,
+  Tab,
+  TabList,
+  TabListContainer,
+  TabPanel,
+  TabsRoot,
+  Typography,
+} from '@heroui/react'
+import { AchievementUnlockerSettingsTab } from '@/features/achievement-unlocker/components/AchievementUnlockerSettingsTab'
+import { useAchievementUnlockerSettings } from '@/features/achievement-unlocker/hooks/useAchievementUnlockerSettings'
+import { CardFarmingSettingsTab } from '@/features/card-farming/components/CardFarmingSettingsTab'
+import { useCardFarmingSettings } from '@/features/card-farming/hooks/useCardFarmingSettings'
+import { useFreeGamesSettings } from '@/features/free-games/hooks/useFreeGamesSettings'
+import { InventorySettingsTab } from '@/features/inventory-manager/components/InventorySettingsTab'
+import { useInventorySettings } from '@/features/inventory-manager/hooks/useInventorySettings'
+import { PageBody } from '@/shared/components/dashboard/PageBody'
+import { ModalDragRegion } from '@/shared/components/ModalDragRegion'
+import { SocialButtons } from '@/shared/components/SocialButtons'
+import { useSettingsModalStore } from '@/shared/stores/settingsModalStore'
+import { switchSettingsTab } from '@/shared/utils/pageTransition'
+import { revealTitleIfTruncated } from '@/shared/utils/revealTitleIfTruncated'
+
+// Data-driven tab list, in `main`'s category order - extending this array plus `SettingsTab`
+// (settingsModalStore.ts) is how each feature adds its own settings category once it exists, no
+// restructuring needed. Mirrors Sidebar.tsx's data-driven `sections` array for the same reason.
+// 'cardFarming'/'freeGames'/'achievementUnlocker'/'inventoryManager' reuse the sidebar's own nav
+// labels rather than duplicating the same English string under a second key - 'achievementUnlocker'/
+// 'inventoryManager' are also genuinely per-account categories living inside this otherwise
+// app-wide modal (see useAchievementUnlockerSettings.ts's doc comment for why).
+//
+// Feature categories reuse the dashboard sidebar's own icons for the same feature, so the two
+// navs read as one system. `groupStart` opens a new visual group (app-wide / per-feature / tools)
+// with the same headerless gap the dashboard sidebar uses between its sections.
+const TABS: {
+  key: SettingsTab
+  labelKey: TranslationKey
+  icon: ComponentType<{ fontSize?: number; className?: string; strokeWidth?: number }>
+  groupStart?: boolean
+}[] = [
+  { key: 'general', labelKey: 'dashboard.settings.general.title', icon: TbSettings },
+  { key: 'subscription', labelKey: 'dashboard.settings.subscription.title', icon: TbCreditCard },
+  { key: 'customization', labelKey: 'dashboard.settings.customization.title', icon: TbPalette },
+  { key: 'steamCredentials', labelKey: 'dashboard.settings.steamCredentials.title', icon: TbKey },
+  {
+    key: 'cardFarming',
+    labelKey: 'dashboard.sidebar.nav.cardFarming',
+    icon: TbCards,
+    groupStart: true,
+  },
+  {
+    key: 'achievementUnlocker',
+    labelKey: 'dashboard.sidebar.nav.achievementUnlocker',
+    icon: TbAward,
+  },
+  {
+    key: 'inventoryManager',
+    labelKey: 'dashboard.sidebar.nav.inventoryManager',
+    icon: TbBuildingStore,
+  },
+  { key: 'freeGames', labelKey: 'dashboard.sidebar.nav.freeGames', icon: TbGift },
+  { key: 'gameSettings', labelKey: 'dashboard.settings.gameSettings.title', icon: TbAdjustments },
+  {
+    key: 'keybinds',
+    labelKey: 'dashboard.settings.keybinds.title',
+    icon: TbKeyboard,
+    groupStart: true,
+  },
+  { key: 'help', labelKey: 'dashboard.settings.help.title', icon: TbHelpCircle },
+  { key: 'debug', labelKey: 'dashboard.settings.debug.title', icon: TbBug },
+]
+
+// One `TabPanel` + a `main`-style "Settings >" breadcrumb and the category's title, shared by every
+// category below. Titles live here rather than in each tab, reusing the category's `TABS` label, so
+// they stay still in every loading/error state. Switching category crossfades the whole panel (see
+// pageTransition.ts's `switchSettingsTab`): only the selected panel is mounted, so the old and new
+// panels share the `settings-transition-area` name one at a time.
+//
+// `scrollbar-gutter` reserves the scrollbar's width whether or not a category overflows, so content
+// doesn't shift sideways between short and long categories, or as a category's content loads in.
+// It's on `fill` panels too, which never scroll, so their title lines up with every other category.
+//
+// `fill` (default false) swaps the usual "column grows to content height, the whole panel scrolls"
+// shape for "column stretches to the modal's own height, a child manages its own internal scroll" -
+// only Debug's log viewer needs this (see DebugSettingsTab.tsx), so every other category is
+// unaffected.
+const SettingsPanel = ({
+  id,
+  fill = false,
+  titleAction,
+  children,
+}: {
+  id: SettingsTab
+  fill?: boolean
+  titleAction?: ReactNode
+  children: ReactNode
+}) => {
+  const { t } = useTranslation()
+  const titleKey = TABS.find(tab => tab.key === id)?.labelKey
+  return (
+    <TabPanel
+      className={cn(
+        'settings-transition-area min-h-0 flex-1 py-8 [scrollbar-gutter:stable]',
+        fill ? 'flex flex-col overflow-hidden' : 'overflow-y-auto',
+      )}
+      id={id}
+    >
+      <div
+        className={cn(
+          'mx-auto flex w-full max-w-4xl flex-col px-10 py-8',
+          fill && 'min-h-0 flex-1',
+        )}
+      >
+        {/* Stands in for the header this modal doesn't have, so the window can be dragged by it (see
+            ModalDragRegion). The offset takes in the panel's empty top padding, 2rem from each of
+            the two wrappers, since that's where a drag is most likely to start. */}
+        <div className='-mt-16 pt-16' data-modal-drag>
+          <Typography
+            className='flex items-center gap-1'
+            color='muted'
+            type='body-xs'
+            weight='semibold'
+          >
+            {t('dashboard.settings.title')}
+            <TbChevronRight fontSize={12} />
+          </Typography>
+          <div className='mb-8 flex items-center justify-between gap-4'>
+            <Typography type='h3' className='font-bold'>
+              {titleKey && t(titleKey)}
+            </Typography>
+            {titleAction}
+          </div>
+        </div>
+        <PageBody fill={fill}>{children}</PageBody>
+      </div>
+    </TabPanel>
+  )
+}
+
+// Mounted once in DashboardShell, driven entirely by settingsModalStore - decoupled from routing,
+// so opening it never hijacks a page slot.
+export const SettingsModal = () => {
+  const { t } = useTranslation()
+  const isOpen = useSettingsModalStore(state => state.isOpen)
+  const activeTab = useSettingsModalStore(state => state.activeTab)
+  const close = useSettingsModalStore(state => state.close)
+  const {
+    settings,
+    isLoading,
+    isSaving,
+    loadErrorCode,
+    actionErrorCode,
+    refresh,
+    saveSteamWebApiKey,
+    saveAntiAway,
+    saveStartMinimized,
+    saveCloseToTray,
+    saveAutoUpdateGamesList,
+    saveFreeGameNotifications,
+    saveTheme,
+    saveFont,
+    saveDisableTooltips,
+    saveCustomBackground,
+    clearCustomBackground,
+  } = useSettingsModal()
+  const achievementUnlocker = useAchievementUnlockerSettings()
+  const inventoryManager = useInventorySettings()
+  const cardFarming = useCardFarmingSettings()
+  const steamCredentials = useSteamCredentialsSettings()
+  const freeGames = useFreeGamesSettings()
+  const ownership = useAgentOwnershipSettings()
+  const [appVersion, setAppVersion] = useState<string | null>(null)
+
+  // Structural parity with `main`'s sidebar footer (a version string below the tab list).
+  // `getVersion()` is a core `@tauri-apps/api` call (reads tauri.conf.json's `version` field), no
+  // plugin or Rust command needed.
+  useEffect(() => {
+    if (isOpen) {
+      getVersion().then(setAppVersion)
+    }
+  }, [isOpen])
+
+  return (
+    <Modal isOpen={isOpen} onOpenChange={open => !open && close()}>
+      <Modal.Backdrop>
+        <Modal.Container size='cover'>
+          {/* No visible `Modal.Header` bar - matches `main`'s look, a full-bleed sidebar+content
+              split with only a floating dismiss button (see GoProModal's identical structural
+              deviation for the established precedent). `Modal.Heading` still renders (visually
+              hidden) so the dialog keeps a real accessible name for screen readers. */}
+          <Modal.Dialog className='overflow-hidden bg-background p-0'>
+            <Modal.Heading className='sr-only'>{t('dashboard.settings.title')}</Modal.Heading>
+            <ModalDragRegion />
+            <Modal.CloseTrigger className='absolute left-5 top-5 z-50 h-8 w-8 bg-field text-muted duration-150 hover:bg-field-hover rounded-full' />
+
+            <Modal.Body className='flex h-full min-h-0 overflow-hidden p-0'>
+              <TabsRoot
+                className='flex h-full min-h-0 w-full'
+                orientation='vertical'
+                selectedKey={activeTab}
+                onSelectionChange={key => switchSettingsTab(key as SettingsTab)}
+              >
+                {/* Fixed-width, non-scrolling nav column - `pt-16` clears the floating close
+                    button above it, `border-r`/`bg-background` match Sidebar.tsx's own dashboard
+                    nav column for visual consistency with the rest of the app's chrome. */}
+                <div
+                  className='flex h-full w-64 shrink-0 flex-col border-r border-border bg-(--app-chrome) pt-16'
+                  data-modal-drag
+                >
+                  <TabListContainer className='min-h-0 flex-1 overflow-y-auto bg-transparent px-3'>
+                    <TabList className='w-full gap-1 p-0'>
+                      {TABS.map(({ key, labelKey, icon: Icon, groupStart }) => (
+                        <Tab
+                          // Same row styling as SidebarItem.tsx (h-9, 18px/1.5-stroke icon,
+                          // semibold label, muted unless selected, `bg-surface-secondary` highlight) so the
+                          // settings nav reads as the same system as the dashboard sidebar.
+                          // `hover:opacity-100` cancels HeroUI's own `.tabs__tab` hover rule,
+                          // which fades an unselected tab to 0.7 opacity - the opposite of the
+                          // sidebar's "brighten on hover".
+                          className={cn(
+                            'h-9 w-full min-w-0 justify-start gap-3 rounded-lg px-3 text-left text-sm font-semibold',
+                            'text-muted hover:bg-surface-hover hover:text-foreground hover:opacity-100',
+                            'data-[hovered=true]:opacity-100',
+                            'data-[selected=true]:bg-surface-secondary data-[selected=true]:text-foreground',
+                            groupStart && 'mt-3',
+                          )}
+                          id={key}
+                          key={key}
+                        >
+                          <Icon className='shrink-0' fontSize={18} strokeWidth={1.5} />
+                          {/* `Tab` itself renders `display:flex` (HeroUI's `.tabs__tab`), so
+                              `truncate` has to live on a child span, not the `Tab` directly - a
+                              flex container can't ellipsis its own anonymous-flex-item text.
+                              Mirrors SidebarItem.tsx's identical `<span className='truncate'>`
+                              pattern. */}
+                          <span className='truncate' onMouseEnter={revealTitleIfTruncated}>
+                            {t(labelKey)}
+                          </span>
+                        </Tab>
+                      ))}
+                    </TabList>
+                  </TabListContainer>
+
+                  <div className='shrink-0 pb-4 pt-2'>
+                    <SocialButtons />
+
+                    {appVersion && (
+                      <Typography className='px-5 pt-2 text-center' color='muted' type='body-xs'>
+                        {t('dashboard.settings.footer.version', { version: appVersion })}
+                      </Typography>
+                    )}
+                  </div>
+                </div>
+
+                {/* Scrollable content column - each category is a `SettingsPanel` (breadcrumb, title
+                    and body), the only child that scrolls within this split. */}
+                <SettingsPanel id='general'>
+                  <GeneralSettingsTab
+                    actionErrorCode={actionErrorCode}
+                    closeToTray={settings?.closeToTray ?? true}
+                    isLoading={isLoading}
+                    isSaving={isSaving}
+                    loadErrorCode={loadErrorCode}
+                    startMinimized={settings?.startMinimized ?? false}
+                    steamWebApiKey={settings?.steamWebApiKey ?? null}
+                    onRefresh={refresh}
+                    onSave={saveSteamWebApiKey}
+                    onSaveAntiAway={saveAntiAway}
+                    onSaveAutoUpdateGamesList={saveAutoUpdateGamesList}
+                    onSaveCloseToTray={saveCloseToTray}
+                    onSaveOwnership={ownership.save}
+                    onSaveStartMinimized={saveStartMinimized}
+                    ownershipActionErrorCode={ownership.actionErrorCode}
+                    ownershipIsLoading={ownership.isLoading}
+                    ownershipIsSaving={ownership.isSaving}
+                    ownershipSettings={ownership.settings}
+                  />
+                </SettingsPanel>
+
+                <SettingsPanel id='subscription'>
+                  <SubscriptionSettingsTab />
+                </SettingsPanel>
+
+                <SettingsPanel id='customization'>
+                  <CustomizationSettingsTab
+                    actionErrorCode={actionErrorCode}
+                    isLoading={isLoading}
+                    loadErrorCode={loadErrorCode}
+                    settings={settings}
+                    onClearCustomBackground={clearCustomBackground}
+                    onRefresh={refresh}
+                    onSaveCustomBackground={saveCustomBackground}
+                    onSaveDisableTooltips={saveDisableTooltips}
+                    onSaveTheme={saveTheme}
+                    onSaveFont={saveFont}
+                  />
+                </SettingsPanel>
+
+                <SettingsPanel id='steamCredentials' titleAction={<SteamCredentialsDocsLink />}>
+                  <SteamCredentialsTab
+                    actionErrorCode={steamCredentials.actionErrorCode}
+                    isAcquiring={steamCredentials.isAcquiring}
+                    isLoading={steamCredentials.isLoading}
+                    isSaving={steamCredentials.isSaving}
+                    loadErrorCode={steamCredentials.loadErrorCode}
+                    onAcquire={steamCredentials.acquire}
+                    onRefresh={steamCredentials.refresh}
+                    onSave={steamCredentials.save}
+                  />
+                </SettingsPanel>
+
+                <SettingsPanel id='cardFarming'>
+                  <CardFarmingSettingsTab
+                    actionErrorCode={cardFarming.actionErrorCode}
+                    isLoading={cardFarming.isLoading}
+                    isSaving={cardFarming.isSaving}
+                    loadErrorCode={cardFarming.loadErrorCode}
+                    settings={cardFarming.settings}
+                    onRefresh={cardFarming.refresh}
+                    onSave={cardFarming.save}
+                  />
+                </SettingsPanel>
+
+                <SettingsPanel id='achievementUnlocker'>
+                  <AchievementUnlockerSettingsTab
+                    actionErrorCode={achievementUnlocker.actionErrorCode}
+                    isLoading={achievementUnlocker.isLoading}
+                    isSaving={achievementUnlocker.isSaving}
+                    loadErrorCode={achievementUnlocker.loadErrorCode}
+                    settings={achievementUnlocker.settings}
+                    onRefresh={achievementUnlocker.refresh}
+                    onSave={achievementUnlocker.save}
+                  />
+                </SettingsPanel>
+
+                <SettingsPanel id='inventoryManager'>
+                  <InventorySettingsTab
+                    actionErrorCode={inventoryManager.actionErrorCode}
+                    isLoading={inventoryManager.isLoading}
+                    isSaving={inventoryManager.isSaving}
+                    loadErrorCode={inventoryManager.loadErrorCode}
+                    settings={inventoryManager.settings}
+                    onRefresh={inventoryManager.refresh}
+                    onSave={inventoryManager.save}
+                  />
+                </SettingsPanel>
+
+                <SettingsPanel id='freeGames'>
+                  <FreeGamesSettingsTab
+                    actionErrorCode={freeGames.actionErrorCode}
+                    isEstablishingSession={freeGames.isEstablishingSession}
+                    isClearingSession={freeGames.isClearingSession}
+                    isLoading={freeGames.isLoading}
+                    loadErrorCode={freeGames.loadErrorCode}
+                    notificationsActionErrorCode={actionErrorCode}
+                    settings={freeGames.settings}
+                    onClearSession={freeGames.clearSession}
+                    onEstablishSession={freeGames.establishSession}
+                    onRefresh={freeGames.refresh}
+                    onSaveFreeGameNotifications={saveFreeGameNotifications}
+                    onToggleAutoRedeem={freeGames.toggleAutoRedeem}
+                  />
+                </SettingsPanel>
+
+                {/* Self-contained, unlike the tabs above - `useGameSettings` isn't lifted here even
+                    though `debug::commands::reset_settings` *does* wipe the per-game override maps/
+                    auto-stop caps this tab reads/writes. Rather than adding a fifth refresh callback
+                    to DebugSettingsTab, `useGameSettings`'s own tab-reactivation gating (`isActive`
+                    in its per-game load effect) already re-fetches fresh values whenever this panel
+                    becomes active again, so a reset while parked on another tab can't leave this
+                    one showing stale data. */}
+                <SettingsPanel id='gameSettings'>
+                  <GameSettingsTab />
+                </SettingsPanel>
+
+                {/* Self-contained, like gameSettings above - a static reference list backed by
+                    `useZoomControls`/`useDashboardShortcuts` (both mounted elsewhere), nothing here
+                    needs lifting into this modal's own state. */}
+                <SettingsPanel id='keybinds'>
+                  <KeybindsSettingsTab />
+                </SettingsPanel>
+
+                <SettingsPanel id='help'>
+                  <HelpSettingsTab />
+                </SettingsPanel>
+
+                <SettingsPanel fill id='debug'>
+                  <DebugSettingsTab
+                    refreshAchievementUnlockerSettings={achievementUnlocker.refresh}
+                    refreshCardFarmingSettings={cardFarming.refresh}
+                    refreshFreeGamesSettings={freeGames.refresh}
+                    refreshGeneralSettings={refresh}
+                    refreshInventorySettings={inventoryManager.refresh}
+                    refreshOwnershipSettings={ownership.refresh}
+                  />
+                </SettingsPanel>
+              </TabsRoot>
+            </Modal.Body>
+          </Modal.Dialog>
+        </Modal.Container>
+      </Modal.Backdrop>
+    </Modal>
+  )
+}

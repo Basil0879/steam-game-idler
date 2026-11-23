@@ -1,0 +1,152 @@
+/* Default theme color-token overrides, plus the app-wide scrollbar rule that consumes two of them
+   — the seed for a swappable theme system.
+
+   This re-declares a subset of @heroui/styles' CSS custom properties (imported in globals.css
+   just above this file) at the same `[data-theme="dark"]` selector _document.tsx hardcodes on
+   <html> (this app is dark-only). HeroUI's own definitions live inside
+   `@layer base` (node_modules/@heroui/styles/dist/themes/default/variables.css); this file is
+   deliberately left unlayered, so per the CSS cascade-layers spec these declarations always win
+   over HeroUI's regardless of import order or selector specificity - no `!important` needed.
+   Anything not re-declared here (success/warning/danger, spacing, radius, etc.) keeps
+   HeroUI's stock value untouched.
+
+   Elevation model - each step is a deliberate, perceptible lightness jump. Before this file
+   existed, the app used HeroUI's `--surface` for the page canvas (via `bg-surface` in
+   DashboardShell/Sidebar), but HeroUI's own Card/Modal/Accordion/etc. components *also* read
+   `--surface` for their own background - same variable, so cards and modals were visually
+   identical to the page they sat on. Inputs had the same problem one layer worse: dark mode's
+   `--field-background` was already equal to stock `--surface`, and `--field-border` was
+   `transparent` with `--field-border-width: 0`, so form fields had no visible boundary at all.
+
+     --background                  page canvas. Kept at HeroUI's stock --surface value (the shade
+                                    already on screen and already liked) - only the *meaning*
+                                    changed, not the color.
+     --field-background/-border    form fields (Input/TextField/Select/etc.) - a distinct fill
+                                    plus a real border, so a field reads clearly whether it sits
+                                    directly on the page or inside a card.
+     --surface / --overlay         cards, modals, popovers, accordions, tooltips.
+     --default / --surface-secondary  secondary buttons, badges, chips, nested-in-card elevation.
+     --separator                   subtle dividers.
+     --border / --surface-tertiary the most prominent neutral tier - crisp field outlines and the
+                                    deepest nesting level.
+
+   Structure note: this is one file, not a `themes/` directory, because only one theme (this one)
+   exists yet - per this project's "don't pre-build structure speculatively" convention. Split
+   into `src/styles/themes/default.css` + siblings when a second (Pro) theme actually gets built,
+   not before.
+*/
+[data-theme='dark'] {
+  /* HeroUI's stock accent (chroma 0.195) looks too vivid against a canvas this dark. Dark presets
+     without an accent of their own inherit this too. */
+  --accent: oklch(0.63 0.15 254);
+
+  --background: #0b0c0e;
+
+  --surface: #16171b;
+  --overlay: #131418;
+
+  /* One shade for every small interactive control (inputs, dropdowns, the search bar, secondary
+     buttons, tab strips, chips, switch tracks), so they read as one family wherever they sit. */
+  --default: #212328;
+  --surface-secondary: #212328;
+
+  --separator: #17181c;
+
+  --border: #1b1c20;
+  --surface-tertiary: #2c2e34;
+
+  --field-background: var(--default);
+
+  /* Everything below is derived from the tokens above rather than being a fixed colour, because this
+     block also applies under every dark theme preset, which only overrides the base tokens. A fixed
+     colour here would show up as the default theme's grey on top of, say, a purple theme.
+
+     HeroUI's stock hover mixes (8% for surfaces, 4% for buttons) were tuned for a lighter canvas. On
+     colours this dark, 4% is too slight to see, and a surface's hover could end up brighter than the
+     selected item beside it. */
+  --app-chrome: color-mix(in oklab, var(--background) 98%, var(--foreground));
+  --surface-hover: color-mix(in oklab, var(--surface) 96%, var(--foreground));
+  --default-hover: color-mix(in oklab, var(--default) 90%, var(--foreground));
+  --field-hover: color-mix(in oklab, var(--field-background) 90%, var(--foreground));
+  --segment: color-mix(in oklab, var(--default) 88%, var(--foreground));
+
+  /* Scrollbar thumb/track - reuses HeroUI's own token names (`--scrollbar-thumb`/`-track`), but
+     driven by `::-webkit-scrollbar` below instead of HeroUI's `scrollbar-color`/`scrollbar-width`
+     system (see this file's scrollbar rule for why). Thumb sits at the same lightness as
+     --surface-tertiary/--field-border - the "most prominent neutral" tier, since it needs to read
+     clearly against every other layer. */
+  --scrollbar-thumb: #2c2e34;
+  --scrollbar-track: transparent;
+}
+
+.button--primary {
+  --button-bg: var(--white);
+  --button-bg-hover: color-mix(in oklab, var(--white) 90%, var(--black) 10%);
+  --button-bg-pressed: color-mix(in oklab, var(--white) 85%, var(--black) 15%);
+  --button-fg: var(--black);
+}
+
+.button--secondary {
+  --button-fg: var(--white);
+}
+
+[data-theme='light'] {
+  --app-chrome: color-mix(in oklab, var(--background) 98%, var(--foreground));
+}
+
+/* Inverted for the `white` preset (the only one setting `data-theme='light'` - see `presets.ts`'s
+   `LIGHT_THEME_PRESETS`): a white-bg/black-text primary button was built to pop against the dark
+   presets' dark canvas, so on a near-white canvas it reads as near-invisible instead. Flipping to
+   black bg/white text (and secondary's text to black) keeps the same contrast relationship, just
+   mirrored for a light background. */
+[data-theme='light'] .button--primary {
+  --button-bg: var(--black);
+  --button-bg-hover: color-mix(in oklab, var(--black) 90%, var(--white) 10%);
+  --button-bg-pressed: color-mix(in oklab, var(--black) 85%, var(--white) 15%);
+  --button-fg: var(--white);
+}
+
+[data-theme='light'] .button--secondary {
+  --button-fg: var(--black);
+}
+
+/* HeroUI fades an unselected tab to 70% on hover, which reads as the tab getting less available.
+   Brightening it instead matches every other hover in the app. */
+.tabs__tab:not([data-selected='true']):not([data-disabled='true']):hover,
+.tabs__tab[data-hovered='true']:not([data-selected='true']):not([data-disabled='true']) {
+  opacity: 1;
+  color: var(--foreground);
+}
+
+/* App-wide scrollbar styling (a fully rounded 8px thumb, inset 3px from each edge by a transparent
+   border, so it doesn't sit hard against the side of the window) via
+   `::-webkit-scrollbar` pseudo-elements - available since this app only ever runs on WebView2
+   (Chromium), so no cross-browser fallback is needed. Deliberately NOT using HeroUI's own
+   `scrollbar-color`/`scrollbar-width` system (see node_modules/@heroui/styles/dist/base/base.css)
+   even though it already defines matching `--scrollbar-thumb`/`-track` tokens - HeroUI ships that
+   activation rule commented out, with a note that applying it globally broke modal backdrop-click-
+   to-close. `::-webkit-scrollbar` only ever renders on elements that actually overflow, and a
+   modal backdrop never does, so it doesn't carry the same risk - `main` ran this exact mechanism
+   globally in production without issue. */
+:root {
+  --scrollbar-size: 14px;
+}
+
+::-webkit-scrollbar {
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: var(--scrollbar-size);
+  background: var(--scrollbar-thumb) padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklch, var(--scrollbar-thumb) 75%, var(--foreground)) padding-box;
+}

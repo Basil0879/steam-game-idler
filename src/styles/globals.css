@@ -1,0 +1,1204 @@
+@import 'tailwindcss';
+@import '@heroui/styles';
+@import './theme.css';
+
+/* App-wide font - `--font-inter` is the next/font-generated CSS variable set on <Html> in
+   _document.tsx. Overriding Tailwind's `--font-sans` token (rather than setting `font-family`
+   directly on `html`/`body`) means every existing `font-sans` utility class and HeroUI component
+   (which reads this same token via Preflight) picks up Inter with no per-component changes. Inter
+   is the free-tier default (see `font.ts`'s `FONT_CSS_VARS`/`applyFont.ts`) - every other bundled
+   font, including Poppins, is a selectable Casual-tier override. */
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  /* Re-expressed from Tailwind's own defaults, multiplied by `--font-size-scale` (set by
+     `applyFont.ts`/`fontInitScript.ts` per selected font, via `font.ts`'s `FONT_SIZE_SCALE`) - a
+     font whose glyphs render visually larger/smaller than average at the same rem value (pixel
+     fonts especially) can be corrected app-wide without breaking the relative text-xs..text-7xl
+     scale, since every size utility still resolves through these same vars and line-height stays
+     a unitless ratio of font-size. `var(--font-size-scale, 1)` is a no-op for every font without a
+     `FONT_SIZE_SCALE` entry. */
+  --text-xs: calc(0.75rem * var(--font-size-scale, 1));
+  --text-sm: calc(0.875rem * var(--font-size-scale, 1));
+  --text-base: calc(1rem * var(--font-size-scale, 1));
+  --text-lg: calc(1.125rem * var(--font-size-scale, 1));
+  --text-xl: calc(1.25rem * var(--font-size-scale, 1));
+  --text-2xl: calc(1.5rem * var(--font-size-scale, 1));
+  --text-3xl: calc(1.875rem * var(--font-size-scale, 1));
+  --text-4xl: calc(2.25rem * var(--font-size-scale, 1));
+  --text-5xl: calc(3rem * var(--font-size-scale, 1));
+  --text-6xl: calc(3.75rem * var(--font-size-scale, 1));
+  --text-7xl: calc(4.5rem * var(--font-size-scale, 1));
+}
+
+/* The window is frameless and transparent (see src-tauri/tauri.conf.json's `transparent: true`,
+   `decorations: false`) - without this, the webview's default background shows through as a
+   white flash before any component paints. */
+html {
+  background-color: transparent !important;
+}
+
+/* No page-level scrolling in this app shell - individual features that need scrollable regions
+   scope it to their own container instead. */
+body {
+  overflow: hidden;
+}
+
+:focus-visible,
+[data-focus-visible='true'],
+[data-focus-within='true'] {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* SignInHero's words (src/shared/components/SignInHero.tsx): faint until lit. SignInHero lights the
+   next one as each image changes. Half the image's 1s crossfade, because the image's change reads as
+   done well before its fade ends and a word fading for the full second looked late. White, not theme
+   colours: these always sit on darkened game art. Where the images don't rotate, all four stay lit. */
+.signin-word {
+  color: rgb(255 255 255 / 0.16);
+  text-shadow: 0 2px 24px rgb(0 0 0 / 0.35);
+  transition: color 500ms ease;
+}
+
+.signin-word--lit,
+.signin-word.force-reduced-motion {
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signin-word {
+    transition: none;
+  }
+}
+
+/* The window controls on the sign-in screen (Titlebar.tsx) sit directly on game art, where the usual
+   solid hover looks like a block cut out of the image, so they frost the art behind them instead.
+   Set through HeroUI's own button tokens, which its hover and pressed states read. White, not theme
+   colours: the art behind them is darkened on every theme. */
+.titlebar-frosted {
+  --button-fg: #fff;
+  --button-bg-hover: rgb(255 255 255 / 0.1);
+  --button-bg-pressed: rgb(255 255 255 / 0.16);
+}
+
+.titlebar-frosted--close {
+  --button-bg-hover: color-mix(in srgb, var(--danger) 60%, transparent);
+  --button-bg-pressed: color-mix(in srgb, var(--danger) 75%, transparent);
+}
+
+@media (hover: hover) {
+  .titlebar-frosted:hover {
+    backdrop-filter: blur(8px) saturate(1.2);
+  }
+
+  .titlebar-frosted--close:hover {
+    backdrop-filter: blur(16px) saturate(1.4);
+  }
+}
+
+/* AddAccountModal uses HeroUI's `scroll='outside'`, which makes the backdrop scrollable. The dialog's
+   open and close animations briefly overflow it, which flashed scrollbars on every open. */
+.add-account-backdrop:has([data-entering='true'], [data-exiting='true']) {
+  overflow: hidden;
+}
+
+/* Go Pro sidebar card (src/shared/components/pro/GoPro.tsx) - free-tier upsell. Styled as the
+   website's CTA rim (docs/app/globals.css `.cta-rim`), so the upsell reads as the same brand moment
+   as steamgameidler.com's: a slowly turning border in the site's muted rainbow (same hues and 36%
+   saturation, same 8s turn) with a soft blurred glow of it around the card (`.go-pro-glow`, a
+   sibling element - the card clips its own overflow, which keeps the cycling perk text's slide-in
+   inside it but would cut a glow drawn from it off), over a neutral fill. The ambient effect is
+   pure CSS (no framer-motion project-wide): the turning border, driven by the `@property
+   --gradient-angle` below so the browser can interpolate the angle directly. (A diagonal sheen
+   sweep was dropped - next to the turning rim it was one effect too many.) The border is a
+   `border-box` background layer under an opaque `padding-box` fill - the standard gradient-border
+   trick that keeps the card's own rounded corners. The fill sits on the active theme's `--background`, so it
+   works on every theme preset. */
+
+@property --gradient-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes gradient-angle {
+  to {
+    --gradient-angle: 360deg;
+  }
+}
+
+.go-pro-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.06), transparent 70%) padding-box,
+    linear-gradient(var(--background), var(--background)) padding-box,
+    var(--go-pro-rainbow) border-box;
+  animation: gradient-angle 8s linear infinite;
+}
+
+/* Hovered or focused, the rainbow fills in faintly: the fill turns 8% see-through so the turning
+   rim behind it washes through - the website's PRO nav pill does the same when it's the current
+   page (docs/app/globals.css `.landing-nav__pro[aria-current='page']`). Fainter than the site's
+   70% fill, which read as too strong across a card this size. Mixed from the theme's own
+   --background, so it tints correctly on every theme preset. */
+.go-pro-card:is(:hover, :focus-visible) {
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.06), transparent 70%) padding-box,
+    linear-gradient(
+        color-mix(in srgb, var(--background) 92%, transparent),
+        color-mix(in srgb, var(--background) 92%, transparent)
+      )
+      padding-box,
+    var(--go-pro-rainbow) border-box;
+}
+
+/* The site CTA's rim colours, a conic turn of the muted rainbow - shared by the border and glow
+   */
+.go-pro-card,
+.go-pro-glow,
+.page-banner,
+.page-banner-glow,
+.holo-card,
+.holo-glow {
+  --go-pro-rainbow: conic-gradient(
+    from var(--gradient-angle),
+    hsl(0 36% 50%),
+    hsl(50 36% 50%),
+    hsl(100 36% 50%),
+    hsl(160 36% 50%),
+    hsl(210 36% 50%),
+    hsl(265 36% 50%),
+    hsl(315 36% 50%),
+    hsl(360 36% 50%)
+  );
+}
+
+/* The rim's soft glow, behind the card (GoPro.tsx places it under the button, inset by the
+   wrapper's px-2). Brightens on hover/focus in place of the old purple box-shadow. */
+.go-pro-glow {
+  position: absolute;
+  inset: 0 0.5rem;
+  /* no border-radius here: GoPro.tsx rounds it to match whichever shape the card is in */
+  background: var(--go-pro-rainbow);
+  filter: blur(12px);
+  opacity: 0.35;
+  pointer-events: none;
+  animation: gradient-angle 8s linear infinite;
+  transition: opacity 200ms ease-out;
+}
+
+.go-pro:has(.go-pro-card:is(:hover, :focus-visible)) .go-pro-glow {
+  opacity: 0.6;
+}
+
+/* Both ambient loops stop under either reduced-motion mechanism (see the `.force-reduced-motion`
+   comment further down for why that one exists alongside the OS setting). The card stays fully
+   styled, just static - the hover glow is a transition, not a loop, so it's kept. */
+/* Crossfade between cycling perk names in the card's subtitle (GoPro.tsx stacks the outgoing and
+   incoming perk in one grid cell, keyed by index, so this replays on every swap). The old one
+   drifts up and out, then the new one rises in from just below. Effectively sequential: the
+   incoming one starts only in the outgoing one's last ~20ms, when (on its ease-in curve) it's
+   already near-invisible. A real overlap of two half-transparent lines read as a glitch, while a
+   delay past the outgoing duration left a visibly empty beat between perks. Under reduced motion the text still cycles, it just swaps
+   instantly - which is why `--out`'s resting style is `opacity: 0` rather than relying on its
+   animation's end state. */
+@keyframes go-pro-perk-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes go-pro-perk-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+.go-pro-perk--in {
+  animation: go-pro-perk-in 400ms cubic-bezier(0.22, 1, 0.36, 1) 160ms both;
+}
+
+.go-pro-perk--out {
+  opacity: 0;
+  animation: go-pro-perk-out 180ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .go-pro-card,
+  .go-pro-glow,
+  .go-pro-perk--in,
+  .go-pro-perk--out {
+    animation: none;
+  }
+}
+
+.go-pro-card.force-reduced-motion,
+.go-pro-glow.force-reduced-motion,
+.go-pro-card.force-reduced-motion .go-pro-perk--in,
+.go-pro-card.force-reduced-motion .go-pro-perk--out {
+  animation: none;
+}
+
+/* Go Pro modal (src/shared/components/pro/GoProModal/) - CSS-only replacements for `main`'s
+   framer-motion entrance/ambient animations.
+
+   `pro-fade-in`/`pro-fade-in-up` replace `main`'s per-element `motion.div/p/button` mount
+   animations - apply the class and set `animation-delay` inline to stagger, matching `main`'s
+   `transition={{ delay }}` usage.
+
+   `pro-shooting-star`/`pro-floating-image` replace `main`'s ambient background motion. A shooting
+   star's CSS `@keyframes` can't vary its travel-completion percentage per-instance the way
+   framer-motion's per-instance `times` array did, so every star shares one representative
+   travel/fade curve (only `--pro-shooting-star-tx/-ty` and the animation's total duration/delay
+   vary per star, both set inline) - purely decorative, so the timing approximation is
+   imperceptible. `prefers-reduced-motion` replaces `main`'s `useReducedMotion()` JS hook. */
+
+@keyframes pro-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pro-fade-in-up {
+  from {
+    opacity: 0;
+    translate: 0 16px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+.pro-fade-in {
+  animation: pro-fade-in 0.5s ease-out both;
+}
+
+.pro-fade-in-up {
+  animation: pro-fade-in-up 0.55s ease-out both;
+}
+
+@keyframes pro-shooting-star {
+  0% {
+    translate: 0 0;
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  16% {
+    translate: var(--pro-shooting-star-tx) var(--pro-shooting-star-ty);
+    opacity: 1;
+  }
+  20% {
+    translate: var(--pro-shooting-star-tx) var(--pro-shooting-star-ty);
+    opacity: 0;
+  }
+  100% {
+    translate: var(--pro-shooting-star-tx) var(--pro-shooting-star-ty);
+    opacity: 0;
+  }
+}
+
+.pro-shooting-star {
+  height: 1.5px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(255, 255, 255, 0.18) 40%,
+    rgba(255, 255, 255, 0.92) 85%,
+    white 100%
+  );
+  animation-name: pro-shooting-star;
+  animation-timing-function: ease-out;
+  animation-iteration-count: infinite;
+  /* Each star has a per-instance inline `animation-delay` (up to several seconds). Without a
+     backwards fill, the element shows its un-animated base style (fully opaque, untranslated)
+     for that whole delay, so delayed stars sat frozen on screen when the modal opened. */
+  animation-fill-mode: backwards;
+}
+
+@keyframes pro-float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -22px;
+  }
+}
+
+.pro-floating-image {
+  animation-name: pro-float;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+/* The "PRO" pill: in GoProModal's "Steam Game Idler PRO" title and the sidebar's GoPro card
+   (GoPro.tsx). The website navbar's PRO pill (docs/app/globals.css `.rainbow-chip.landing-nav__pro`)
+   - a 1px rim of the site's muted rainbow turning every 8s around a dark pill, with a faint glow in
+   the rim's hues. The website's /pro hero mirrors this one; keep the two in step. Sized in em so it
+   takes its context's text size; the right padding is a touch smaller than the left because the
+   letter-spacing already trails the last letter. */
+.pro-pill {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: inline-flex;
+  /* baseline, not middle: middle centres on lowercase x-height, which sat the pill (and its PRO)
+     visibly low beside the all-caps title. On the baseline, PRO's letters line up exactly with the
+     title's, and the pill's even padding wraps them. */
+  vertical-align: baseline;
+  padding: 1px;
+  border-radius: 999px;
+  box-shadow:
+    0 0 14px -4px hsl(265 60% 60% / 0.45),
+    0 0 14px -6px hsl(160 60% 55% / 0.35);
+}
+
+.pro-pill::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: conic-gradient(
+    from var(--gradient-angle),
+    hsl(0 36% 50%),
+    hsl(50 36% 50%),
+    hsl(100 36% 50%),
+    hsl(160 36% 50%),
+    hsl(210 36% 50%),
+    hsl(265 36% 50%),
+    hsl(315 36% 50%),
+    hsl(360 36% 50%)
+  );
+  animation: gradient-angle 8s linear infinite;
+}
+
+.pro-pill__inner {
+  /* Even top/bottom: an uneven split to centre the rim on the capitals was tried, but at these
+     sizes it rounds to whole pixels and pushed PRO's letters off the line's baseline instead */
+  padding: 0.15em 0.45em 0.15em 0.65em;
+  border-radius: 999px;
+  background: var(--background);
+  /* the theme's own text colour, not white: the fill is the theme's background, so on the light
+     preset white text vanished into it */
+  color: var(--foreground);
+  line-height: 1.2;
+}
+
+/* The titlebar's pill (Titlebar.tsx): at its 10px size the shared glow above all but vanished
+   against the bar, so it gets a stronger one in the same two hues - the website navbar PRO pill's
+   hover glow (docs/app/globals.css `.rainbow-chip--glow:hover`), a touch wider */
+.pro-pill.pro-pill--glow {
+  box-shadow:
+    0 0 16px -2px hsl(265 70% 62% / 0.6),
+    0 0 16px -4px hsl(160 70% 55% / 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pro-pill::before {
+    animation: none;
+  }
+}
+
+/* the flag on an ancestor (GoProModal, the GoPro card) or on the pill itself (Titlebar) */
+.force-reduced-motion .pro-pill::before,
+.pro-pill.force-reduced-motion::before {
+  animation: none;
+}
+
+/* Tier badges (TierBadge.tsx): the PRO pill's shape in each tier's own colours instead of the
+   rainbow - casual's deep blue -> light cyan, gamer's dark purple -> hot pink (deliberately further
+   apart than the tier cards' accents, so the turn shows on a 1px rim), turning around that rim over
+   an almost-clear tint of the same colours. The
+   website's tier badges (docs/app/globals.css `.tier-badge`) mirror these; keep them in step.
+
+   Unlike .pro-pill, the fill here is see-through, so the rim can't be a gradient hidden behind an
+   opaque fill: it's masked to a 1px ring instead (the content box excluded from the border box),
+   which lets the badge sit on any surface - settings rows, cards, the GoPro modal - and tint with
+   whatever's behind it. Free (no tier) is a plain, static rim. */
+.tier-badge {
+  --tier-from: rgb(255 255 255 / 0.18);
+  --tier-to: rgb(255 255 255 / 0.18);
+  position: relative;
+  display: inline-flex;
+  vertical-align: baseline;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tier-to) 10%, transparent);
+}
+
+.tier-badge::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--gradient-angle),
+    var(--tier-from),
+    var(--tier-to),
+    var(--tier-from)
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.tier-badge--casual::before,
+.tier-badge--gamer::before {
+  animation: gradient-angle 8s linear infinite;
+}
+
+.tier-badge--casual {
+  /* a deep and a light blue, far apart in lightness so the turn is visible - two similar blues
+     read as one solid rim */
+  --tier-from: #1d4ed8;
+  --tier-to: #67e8f9;
+  color: #8fd8fb;
+}
+
+.tier-badge--gamer {
+  /* dark purple into hot pink, ~55deg of hue apart: far enough that purple and pink both read
+     (fuchsia at ~35deg blurred into one), close enough not to look two-tone (blurple at ~100deg),
+     and dark-to-light like casual's pair so the turn shows */
+  --tier-from: #7e22ce;
+  --tier-to: #ff3fa4;
+  color: #f0abfc;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tier-badge::before {
+    animation: none;
+  }
+}
+
+.tier-badge.force-reduced-motion::before {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pro-fade-in,
+  .pro-fade-in-up,
+  .overlay-fade-in {
+    animation: none;
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  .pro-shooting-star {
+    display: none;
+  }
+
+  .pro-floating-image {
+    animation: none;
+  }
+}
+
+/* Older WebKitGTK builds (every Ubuntu 22.04-era build measured, 2.44 and 2.50) can't keep up with
+   GoProModal's ambient motion (15 infinitely-looping shooting stars + a floating-image bounce, over
+   a 260-gradient masked starfield background) - unusable lag, where 2.52+ is smooth. Applied via
+   platformStore's `forceReducedMotion` (backed by `platform::needs_reduced_motion`, which checks
+   the WebKitGTK version actually loaded at runtime) rather than gating on the user's
+   prefers-reduced-motion OS setting, since this isn't a motion-sensitivity accommodation - mirrors
+   the ruleset above exactly so both mechanisms stay in sync if either changes. */
+.force-reduced-motion .pro-fade-in,
+.force-reduced-motion .pro-fade-in-up,
+.force-reduced-motion .overlay-fade-in {
+  animation: none;
+  opacity: 1;
+  translate: 0 0;
+}
+
+.force-reduced-motion .pro-shooting-star {
+  display: none;
+}
+
+.force-reduced-motion .pro-floating-image {
+  animation: none;
+}
+
+/* Not motion, and deliberately absent from the OS prefers-reduced-motion block above: a static
+   effect that's only too expensive to repaint on those same older WebKitGTK builds. A live
+   backdrop blur re-samples everything behind each of FeatureCard's nine buttons on every scroll
+   frame. A darker solid fill reads almost the same. The rest of the modal's heavy static layers
+   (starfield, masks) are dropped in GoProModal/index.tsx, since they're inline styles. */
+.force-reduced-motion .pro-card-button {
+  backdrop-filter: none;
+  background-color: rgb(0 0 0 / 0.5);
+}
+
+.force-reduced-motion .pro-card-button:hover {
+  background-color: rgb(0 0 0 / 0.65);
+}
+
+/* Generic overlay backdrop fade (HelpDesk's dim backdrop, and any future plain-div overlay that
+   isn't HeroUI's own Modal/AlertDialog) - reuses `pro-fade-in`'s keyframe but at HeroUI's own real
+   Modal backdrop entrance duration (150ms ease-out, see `.modal__backdrop[data-entering=true]` in
+   `@heroui/styles`) rather than the 500ms `pro-fade-in`/`pro-fade-in-up` use for GoProModal's much
+   larger, more deliberate reveal. */
+.overlay-fade-in {
+  animation: pro-fade-in 150ms ease-out both;
+}
+
+/* Foil items (InventoryItemCard / InventoryEmptyBanner's preview, when `item.foil` is true): the
+   same slowly turning rainbow rim as the Go Pro card, sign-in logo and PageBanner (`--go-pro-rainbow`
+   + the `gradient-angle` turn, defined at the top of this file), so "special" reads the same way
+   everywhere in the app - same gradient-border trick, an opaque `padding-box` fill over a
+   `border-box` rainbow. A foil card drops the caller's flat `border-border`. The fill is the
+   theme's own `--surface`, like every other card. Stops under both reduced-motion mechanisms (the
+   OS setting, and `.force-reduced-motion` - see the Go Pro card's comment above). */
+.holo-card {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    var(--go-pro-rainbow) border-box;
+  animation: gradient-angle 8s linear infinite;
+}
+
+/* A soft glow of the same turning rainbow behind the card - a sibling `<span>` placed under it
+   (InventoryItemCard / InventoryEmptyBanner), like `.go-pro-glow`/`.page-banner-glow`, since a
+   `z-index: -1` pseudo-element would sink behind whichever ancestor paints a background. Fainter
+   and tighter than those, since a grid can hold many foils a 16px gap apart. */
+.holo-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--go-pro-rainbow);
+  filter: blur(12px);
+  opacity: 0.45;
+  pointer-events: none;
+  animation: gradient-angle 8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .holo-card,
+  .holo-glow {
+    animation: none;
+  }
+}
+
+.holo-card.force-reduced-motion,
+.holo-glow.force-reduced-motion {
+  animation: none;
+}
+
+/* Chatway - forces the widget's own popup frame to open on the right, under the titlebar's
+   button cluster (HelpDesk.tsx's trigger among them), instead of Chatway's own default left-side
+   placement. `right: 36px` is ported verbatim from `main` (confirmed live via CDP: viewport width
+   minus 36px minus the frame's own 550px width lines up exactly with the frame's observed left
+   edge) - the frame's right edge sits near the window's top-right corner rather than literally
+   centered under any one icon, matching main's own placement (HelpDesk isn't the rightmost button
+   there either - Notifications/Menu/the 3 window controls sit to its right in both codebases).
+   `top: 40px` is NOT copied verbatim - main's titlebar is 48px tall (`h-12`), this rewrite's is
+   40px (`h-10`, confirmed via the HelpDesk button's own bounding box), so 40px is what actually
+   sits the frame flush under this titlebar instead of leaving main's tuned 48px as an 8px gap. */
+.chatway--frame-container {
+  min-width: 550px !important;
+  top: 64px !important;
+  right: 36px !important;
+  left: auto !important;
+}
+
+/* FAQItem's expand/collapse - a pure-CSS grid-rows trick (0fr -> 1fr) rather than `main`'s
+   framer-motion `height: 0 -> auto` measurement, so the collapsed panel never needs a JS-measured
+   height and the transition stays on the compositor. */
+.faq-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.28s ease-in-out;
+}
+
+.faq-panel.is-open {
+  grid-template-rows: 1fr;
+}
+
+.faq-panel > div {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.faq-chevron {
+  transition: transform 0.25s ease;
+}
+
+.faq-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+/* Bottom-of-screen system/promo banner (src/shared/components/Banner.tsx) - `main` drove mount/
+   dismiss with framer-motion's `AnimatePresence` (`initial`/`animate`/`exit` on a `y` offset);
+   dropped project-wide, so `Banner.tsx` instead toggles between the `-enter`/
+   `-exit` class pairs below, deferring the actual dismiss (removal from `useBanners`' eligible
+   set) via `setTimeout` until the exit animation's duration elapses - keep `EXIT_DURATION_MS` in
+   Banner.tsx equal to both `-exit` animations' `animation-duration` (300ms) if either changes.
+   The eased-back timing curve approximates `main`'s spring (damping: 20, stiffness: 300), which
+   has a small overshoot on entrance. */
+@keyframes banner-alert-slide-in {
+  from {
+    translate: 0 80px;
+    opacity: 0;
+  }
+  to {
+    translate: 0 0;
+    opacity: 1;
+  }
+}
+
+@keyframes banner-alert-slide-out {
+  from {
+    translate: 0 0;
+    opacity: 1;
+  }
+  to {
+    translate: 0 80px;
+    opacity: 0;
+  }
+}
+
+.banner-alert-enter {
+  animation: banner-alert-slide-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.banner-alert-exit {
+  animation: banner-alert-slide-out 0.3s ease-in both;
+}
+
+@keyframes banner-promo-slide-in {
+  from {
+    translate: 0 140px;
+    opacity: 0;
+  }
+  to {
+    translate: 0 0;
+    opacity: 1;
+  }
+}
+
+@keyframes banner-promo-slide-out {
+  from {
+    translate: 0 0;
+    opacity: 1;
+  }
+  to {
+    translate: 0 140px;
+    opacity: 0;
+  }
+}
+
+.banner-promo-enter {
+  animation: banner-promo-slide-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.banner-promo-exit {
+  animation: banner-promo-slide-out 0.3s ease-in both;
+}
+
+/* PromoBanner's rainbow-color-variant shimmer - `main`'s framer-motion
+   `backgroundPositionX: ['0%', '100%', '0%']` over 8s, linear, infinite. */
+@keyframes banner-promo-rainbow-shimmer {
+  0%,
+  100% {
+    background-position-x: 0%;
+  }
+  50% {
+    background-position-x: 100%;
+  }
+}
+
+.banner-promo-rainbow {
+  animation: banner-promo-rainbow-shimmer 8s linear infinite;
+}
+
+/* PromoBanner's floating asset image - `main`'s framer-motion `y: [-6, 6, -6]` over 6s,
+   ease-in-out, infinite. Amplitude/phase differ from `.pro-floating-image` (GoProModal's own
+   float, 0 -> -22px -> 0) enough that reusing it would visibly change the motion, so this is its
+   own keyframe rather than a parameterized share. */
+@keyframes banner-asset-float {
+  0%,
+  100% {
+    translate: 0 -6px;
+  }
+  50% {
+    translate: 0 6px;
+  }
+}
+
+.banner-asset-float {
+  animation: banner-asset-float 6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .banner-alert-enter,
+  .banner-alert-exit,
+  .banner-promo-enter,
+  .banner-promo-exit {
+    animation: none;
+    translate: 0 0;
+    opacity: 1;
+  }
+
+  .banner-promo-rainbow,
+  .banner-asset-float {
+    animation: none;
+  }
+}
+
+/* FloatingActionBar.tsx (achievement manager's selection / unsaved-changes bar) - a short slide-up
+   with a slight overshoot as it appears, so the bar is noticed the moment something gets selected
+   rather than quietly appearing at the bottom of the list. Skipped entirely for reduced motion. */
+@keyframes floating-action-bar-enter {
+  from {
+    translate: 0 24px;
+    opacity: 0;
+  }
+  to {
+    translate: 0 0;
+    opacity: 1;
+  }
+}
+
+.floating-action-bar-enter {
+  animation: floating-action-bar-enter 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floating-action-bar-enter {
+    animation: none;
+  }
+}
+
+/* pageTransition.ts - the crossfade between views, via the View Transitions API (see its
+   `TransitionScope` for which element each area is). Each area is only named while its own
+   transition runs (the `data-view-transition` attribute on <html>): the browser draws named areas
+   above everything else, so the dashboard's area staying named during a Settings switch would paint
+   the page over the Settings modal. See pageTransition.ts for why nothing else (including :root) is
+   named. */
+html[data-view-transition='page'] .page-transition-area {
+  view-transition-name: page;
+}
+
+html[data-view-transition='settings'] .settings-transition-area {
+  view-transition-name: settings;
+}
+
+html[data-view-transition='tabs'] .tabs-transition-area {
+  view-transition-name: tabs;
+}
+
+html[data-view-transition='achievement-manager'] .achievement-manager-transition-area {
+  view-transition-name: achievement-manager;
+}
+
+/* Every crossfade above shares one timing */
+::view-transition-old(*),
+::view-transition-new(*) {
+  animation-duration: 0.13s;
+  animation-timing-function: ease;
+}
+
+/* Column layout for every non-virtualized game grid and loading skeleton. The minimum width must
+   match GAME_GRID_MIN_CARD_WIDTH in useGameGridColumns.ts, which sizes the virtualized grids. */
+/* Game card shape, chosen in Settings > Customization (see gameCardStyleStore.ts, whose
+   GAME_CARD_STYLE_METRICS must match these). */
+:root {
+  --game-card-aspect: 2 / 3;
+  --game-card-min-width: 150px;
+}
+
+[data-game-card-style='banner'] {
+  --game-card-aspect: 460 / 215;
+  --game-card-min-width: 220px;
+}
+
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--game-card-min-width), 1fr));
+  gap: 1rem;
+}
+
+/* RecommendedBanner.tsx - the art's fade up from dark, settling out of a slight zoom, and the title's
+   plain fade alongside it. Both durations and the easing match the per-slide image transition in
+   that component. */
+@keyframes banner-settle {
+  from {
+    scale: 1.04;
+    opacity: 0;
+  }
+  to {
+    scale: 1;
+    opacity: 1;
+  }
+}
+
+.banner-settle {
+  animation: banner-settle 0.7s ease both;
+}
+
+.banner-title-fade {
+  animation: pro-fade-in 0.7s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .banner-settle,
+  .banner-title-fade {
+    animation: none;
+  }
+}
+
+/* PageToolbar.tsx - a full-width bar in the page's own colour, with content scrolling beneath it.
+   `--page-toolbar-height` is its usual height: 40px controls with 14px of `py-3.5` either side.
+   Cancelling that from the layout pulls the content up behind the bar, and the content's own top
+   padding then puts its first row right at the bar's bottom edge, so the controls have the same 14px
+   above and below whether or not anything is scrolled behind them. A top-row card's 4px hover lift
+   slides just under the bar, the same as any card scrolled up to it. */
+:root {
+  --page-toolbar-height: 68px;
+}
+
+.page-toolbar {
+  position: relative;
+  z-index: 10;
+  margin-bottom: calc(var(--page-toolbar-height) * -1);
+  /* The content below always leaves room for a scrollbar, and this bar sits outside that scroller,
+     so without this its controls wouldn't line up with the right edge of the content. */
+  padding-right: calc(1.5rem + var(--scrollbar-size));
+}
+
+/* The Games list's bar sits inside the scroller, so the scrollbar's room is already taken off. */
+.games-list-scroller .page-toolbar {
+  padding-right: 1.5rem;
+}
+
+/* Reserves the scrollbar's room on a page's scrollers even when they don't overflow. Otherwise a
+   grid would be wider with a few games than with many, and shift when a list grows long enough. Not
+   on one wrapping a virtualized grid, which scrolls and reserves that room itself: both reserving it
+   would leave an empty strip beside the real scrollbar. Matches a marker on the grid's container,
+   not react-window's own [role='grid'], which only exists once that container has been measured:
+   the panel's width would then change during the measuring, causing a ResizeObserver loop error.
+   GameGridSkeleton.tsx is excluded for the same reason as a virtualized grid: it leaves the room on
+   its own box, so its panel reserving it too would leave the skeleton 14px narrower than the real
+   grid - enough to lose a column and draw bigger tiles than the cards that replace it. */
+main .overflow-y-auto:not(.inventory-filter-panel, :has(.virtual-grid-host, .game-grid-skeleton)) {
+  scrollbar-gutter: stable;
+}
+
+.page-toolbar-solid {
+  background: var(--background);
+}
+
+/* With a backdrop behind the page, a solid bar ends in a hard line wherever the backdrop is bright.
+   Fading its bottom padding avoids that. Not done without a backdrop, where it would only soften
+   cards scrolling under the bar. */
+body:has(.page-backdrop) .page-toolbar-solid {
+  background: linear-gradient(to bottom, var(--background) calc(100% - 14px), transparent);
+}
+
+/* Scroll containers run up behind the bar, but their scrollbars shouldn't. Starting the track below the bar also keeps the thumb out from under it. Matched from
+   `main`, since which element scrolls varies by page (a tab panel, a virtualized grid, a filter
+   panel), and overlays render outside `main`, so their scrollbars aren't affected. The Games list
+   is the exception, since its bar starts further down the page: GamesList.tsx sets its inset as the
+   bar scrolls up to dock. */
+main:has(.page-toolbar) *:not(.games-list-scroller)::-webkit-scrollbar-track {
+  margin-top: var(--page-toolbar-height);
+}
+
+.games-list-scroller::-webkit-scrollbar-track {
+  margin-top: var(--games-list-scrollbar-inset, 0);
+}
+
+/* Keeps content clear of the bar at the top of its scroll range. Virtualized grids and the like use
+   this alone, since react-window handles their horizontal padding itself. */
+.page-toolbar-offset {
+  padding-top: var(--page-toolbar-height);
+}
+
+/* Whatever sits directly below a PageToolbar. */
+.page-content {
+  padding: var(--page-toolbar-height) 1.5rem 1.5rem;
+}
+
+/* PageBanner.tsx - the large banner on an empty page. The rim and glow are the Go Pro card's, using
+   the same gradient-border trick. The fill is the theme's own --background so it works on every
+   preset, with soft colour washes from the rim's hues gathered behind the illustration on the right,
+   leaving the text on the left against a calm background. */
+.page-banner {
+  border: 1px solid transparent;
+  background:
+    radial-gradient(60% 100% at 88% 8%, hsl(265 60% 48% / 0.32), transparent 72%) padding-box,
+    radial-gradient(50% 90% at 66% 112%, hsl(195 70% 42% / 0.26), transparent 72%) padding-box,
+    radial-gradient(38% 70% at 104% 72%, hsl(330 60% 48% / 0.2), transparent 72%) padding-box,
+    linear-gradient(var(--background), var(--background)) padding-box,
+    var(--go-pro-rainbow) border-box;
+  animation: gradient-angle 8s linear infinite;
+}
+
+.page-banner-glow {
+  position: absolute;
+  inset: 0;
+  background: var(--go-pro-rainbow);
+  filter: blur(12px);
+  opacity: 0.35;
+  pointer-events: none;
+  animation: gradient-angle 8s linear infinite;
+}
+
+/* PageBannerArea (and RunScreen, whose content opens with a banner) below a floating toolbar: clear
+   of the bar, plus room for the banner's glow to fade out. */
+.page-banner-area-below-toolbar {
+  padding: calc(var(--page-toolbar-height) + 1rem) 1.5rem 1.5rem;
+}
+
+/* A faint technical grid behind the illustration, faded out before it reaches the text. */
+.page-banner-grid {
+  background-image:
+    linear-gradient(rgb(255 255 255 / 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.04) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: linear-gradient(90deg, transparent 30%, black 75%);
+  mask-image: linear-gradient(90deg, transparent 30%, black 75%);
+}
+
+@keyframes page-banner-float {
+  50% {
+    translate: 0 -6px;
+  }
+}
+
+.page-banner-float {
+  animation: page-banner-float 7s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-banner,
+  .page-banner-glow,
+  .page-banner-float {
+    animation: none;
+  }
+}
+
+.page-banner.force-reduced-motion,
+.page-banner-glow.force-reduced-motion,
+.force-reduced-motion .page-banner-float {
+  animation: none;
+}
+
+/* SplashScene.tsx - the launch/update splash's animated backdrop and logo mark. Every animation
+   here moves `translate`/`rotate`/`scale`/`opacity` only, so the compositor handles it without
+   repainting; no `filter` anywhere (WebKitGTK). */
+
+/* The streaks fall along their own axis inside a tilted, oversized field, so they cross the window
+   diagonally like the video's and never show an edge. */
+.splash-streaks {
+  inset: -40% -25%;
+  rotate: -28deg;
+}
+
+@keyframes splash-streak-fall {
+  from {
+    translate: 0 -30vh;
+  }
+  to {
+    translate: 0 170vh;
+  }
+}
+
+.splash-streak {
+  animation: splash-streak-fall linear infinite;
+  will-change: translate;
+}
+
+.splash-vignette {
+  background:
+    radial-gradient(ellipse 34% 30% at 50% 50%, rgb(0 0 0 / 0.75), transparent 100%),
+    radial-gradient(ellipse 85% 80% at 50% 50%, transparent 40%, rgb(0 0 0 / 0.85) 100%);
+}
+
+@keyframes splash-glow-breathe {
+  from {
+    opacity: 0.03;
+    scale: 0.98;
+  }
+  to {
+    opacity: 0.05;
+    scale: 1.02;
+  }
+}
+
+/* A faint white glow hugging the mark and the wordmark (see SplashGlow). The shapes are solid white
+   and only the layer is see-through: a layer's opacity applies to it as a whole, so where the two
+   shapes' soft edges overlap between the mark and the wordmark they merge into one outline instead
+   of stacking into a brighter band. The soft edge is a box-shadow, painted once, never a `filter`. */
+.splash-glow {
+  animation: splash-glow-breathe 3.2s ease-in-out infinite alternate;
+}
+
+.splash-glow > * {
+  background: #ffffff;
+  box-shadow: 0 0 56px 28px #ffffff;
+}
+
+@keyframes splash-orbit-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+.splash-orbit {
+  animation: splash-orbit-spin 3.6s linear infinite;
+}
+
+/* SplashMark's other loading indicators (it picks one at random per splash) */
+.splash-spin {
+  animation: splash-orbit-spin 3s linear infinite;
+}
+
+.splash-chase {
+  animation: splash-orbit-spin 1.8s cubic-bezier(0.55, 0.15, 0.45, 0.85) infinite both;
+}
+
+@keyframes splash-hex-chase {
+  0%,
+  10% {
+    opacity: 1;
+  }
+  45%,
+  100% {
+    opacity: 0.1;
+  }
+}
+
+.splash-hex-edge {
+  opacity: 0.1;
+  animation: splash-hex-chase 1.08s linear infinite;
+}
+
+/* tilt first, then spin within the tilted plane, so the arc runs round an ellipse */
+@keyframes splash-gyro {
+  from {
+    transform: rotate(var(--tilt)) rotateX(72deg) rotate(0deg);
+  }
+  to {
+    transform: rotate(var(--tilt)) rotateX(72deg) rotate(360deg);
+  }
+}
+
+.splash-gyro {
+  animation: splash-gyro 3s linear infinite;
+}
+
+.splash-liquid-wave {
+  animation: splash-liquid-wave 1.1s linear infinite;
+}
+
+@keyframes splash-liquid-wave {
+  to {
+    transform: translateX(-64px);
+  }
+}
+
+/* rises from below the logo to full, holds, then fades out so the next fill starts empty */
+.splash-liquid-level {
+  animation: splash-liquid-level 3.6s cubic-bezier(0.4, 0, 0.3, 1) infinite;
+}
+
+@keyframes splash-liquid-level {
+  0% {
+    transform: translateY(262px);
+    opacity: 1;
+  }
+  70% {
+    transform: translateY(4px);
+  }
+  88% {
+    transform: translateY(4px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(4px);
+    opacity: 0;
+  }
+}
+
+/* The mark draws its outline on, then fills in over it and settles into a slow breath. */
+@keyframes splash-logo-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes splash-logo-fill {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes splash-logo-breathe {
+  50% {
+    scale: 1.05;
+  }
+}
+
+.splash-logo-stroke {
+  stroke-dasharray: 1;
+  animation: splash-logo-draw 1.1s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+.splash-logo-fill {
+  animation: splash-logo-fill 0.5s ease 0.9s both;
+}
+
+.splash-logo {
+  animation: splash-logo-breathe 3.2s ease-in-out 1.4s infinite;
+}
+
+/* forceReducedMotion (older WebKitGTK builds, where ambient animation lags) - a performance gate,
+   not an accessibility preference: the OS reduced-motion setting is deliberately not honoured
+   here, as the loader video it replaced never did either, and this is the app's own "still working"
+   screen. Still frame: paused rather than removed, so each streak stays where its negative delay
+   put it (with no animation they would all sit at the field's top edge, off-screen). The mark has
+   its animations dropped instead, which leaves it fully drawn and filled. The orbiting ring keeps
+   turning - it's the only loading indicator left, and a single small rotation is cheap. */
+.splash-scene.force-reduced-motion,
+.splash-scene.force-reduced-motion * {
+  animation-play-state: paused !important;
+}
+
+.splash-scene.force-reduced-motion .splash-orbit {
+  animation-play-state: running !important;
+}
+
+.splash-scene.force-reduced-motion .splash-logo,
+.splash-scene.force-reduced-motion .splash-logo * {
+  animation: none !important;
+}

@@ -1,0 +1,106 @@
+import { listen } from '@tauri-apps/api/event'
+import { useEffect, useRef } from 'react'
+import { useUpdateStore } from '@/shared/stores/updateStore'
+import { logFrontendWarn } from '@/shared/utils/frontendLogging'
+import {
+  canAutoUpdateCheck,
+  checkForUpdate,
+  fetchLatest,
+  performUpdate,
+} from '@/shared/utils/update'
+
+const CHECK_INTERVAL_MS = 5 * 60 * 1000
+
+// Match src-tauri/src/tray.rs's TRAY_UPDATE_STARTED_EVENT/TRAY_UPDATE_FAILED_EVENT - the tray's
+// "Check for updates.." installs from the Rust side, bypassing performUpdate.
+const TRAY_UPDATE_STARTED_EVENT = 'tray-update-started'
+const TRAY_UPDATE_FAILED_EVENT = 'tray-update-failed'
+
+/**
+ * Periodically checks for updates and installs them per `latest.json`'s `major` flag:
+ * - `major: true` installs silently on whichever check first sees it, no user interaction.
+ * - Otherwise, the very first check since app start still installs silently (matches `main`'s
+ *   behavior - existing users shouldn't linger on a stale version just because the update
+ *   happened to be minor/patch); every check after that only flips `updateAvailable`, leaving the
+ *   actual install to an opt-in action (e.g. `UpdateButton`).
+ * Builds that can't self-update (a portable Windows zip, or a Linux deb/rpm install - see
+ * platform::can_auto_update's doc comment) skip checking entirely.
+ */
+export function useCheckForUpdates() {
+  const setUpdateAvailable = useUpdateStore(state => state.setUpdateAvailable)
+  const setIsUpdating = useUpdateStore(state => state.setIsUpdating)
+  const setUpdateFailed = useUpdateStore(state => state.setUpdateFailed)
+  const setShowChangelog = useUpdateStore(state => state.setShowChangelog)
+  const setInitialCheckSettled = useUpdateStore(state => state.setInitialCheckSettled)
+  const isInitialCheck = useRef(true)
+
+  // A tray-started install gets the same UpdateLoader (and the same "an update is installing"
+  // state for anything gating on isUpdating) as one performUpdate runs, including its error state
+  // on failure - whose "Try again" then retries through the frontend flow.
+  useEffect(() => {
+    const unlisten = Promise.all([
+      listen(TRAY_UPDATE_STARTED_EVENT, () => {
+        setUpdateFailed(false)
+        setIsUpdating(true)
+      }),
+      listen(TRAY_UPDATE_FAILED_EVENT, () => setUpdateFailed(true)),
+    ])
+    return () => {
+      unlisten.then(fns => fns.forEach(fn => fn()))
+    }
+  }, [setIsUpdating, setUpdateFailed])
+
+  useEffect(() => {
+    // `performUpdate` sets this flag right before relaunching (and it's in `KEYS_TO_PRESERVE`, so
+    // it survives a major update's data clear too) - this is the other half, read once on the
+    // first mount after that relaunch to actually pop the changelog.
+    if (localStorage.getItem('hasUpdated')) {
+      localStorage.removeItem('hasUpdated')
+      setShowChangelog(true)
+    }
+  }, [setShowChangelog])
+
+  useEffect(() => {
+    const checkForUpdates = async () => {
+      // The update screen is already up (an install in progress, or a failed one waiting on the
+      // user's retry/continue) - a second check would only race it
+      if (useUpdateStore.getState().isUpdating) return
+
+      try {
+        if (!(await canAutoUpdateCheck())) return
+
+        const update = await checkForUpdate()
+        if (!update) return
+
+        const latest = await fetchLatest()
+
+        if (latest?.major || isInitialCheck.current) {
+          // Never throws - a failure leaves UpdateLoader up in its error state
+          await performUpdate(update, { major: !!latest?.major })
+        } else {
+          setUpdateAvailable(true)
+        }
+      } catch (error) {
+        console.error('Error in (checkForUpdates):', error)
+        // `check()`'s own GitHub->R2 fallback runs entirely inside the Tauri updater plugin's Rust
+        // code (see tauri.conf.json's `plugins.updater.endpoints`) - this catch only ever sees the
+        // final outcome once every configured endpoint has failed, not which one(s) failed or in
+        // what order. That per-endpoint detail is still captured, just server-side in the log file
+        // (the plugin logs an error for each failed endpoint before trying the next one) - so this
+        // message intentionally doesn't guess at a specific cause (e.g. regional blocking) that
+        // this layer can't actually verify.
+        logFrontendWarn('useCheckForUpdates', 'update check failed on every configured endpoint', {
+          error: String(error),
+        })
+      } finally {
+        // A successful install never reaches this - it relaunches the app first.
+        if (isInitialCheck.current) setInitialCheckSettled(true)
+        isInitialCheck.current = false
+      }
+    }
+
+    checkForUpdates()
+    const intervalId = setInterval(checkForUpdates, CHECK_INTERVAL_MS)
+    return () => clearInterval(intervalId)
+  }, [setUpdateAvailable, setInitialCheckSettled])
+}

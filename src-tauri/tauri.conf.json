@@ -1,0 +1,90 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Steam Game Idler",
+  "mainBinaryName": "Steam Game Idler",
+  "version": "6.5.2",
+  "identifier": "com.zevnda.steam-game-idler",
+  "build": {
+    "beforeDevCommand": "pnpm run dev",
+    "beforeBuildCommand": "pnpm run build",
+    "devUrl": "http://localhost:3000",
+    "frontendDist": "../out"
+  },
+  "bundle": {
+    "active": true,
+    "category": "Utility",
+    "copyright": "Copyright © 2024-2026 zevnda",
+    "targets": "all",
+    "externalBin": [],
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.ico"],
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": "",
+      "nsis": {
+        "installerIcon": "icons/icon.ico",
+        "installMode": "currentUser",
+        "installerHooks": "./installer-hooks.nsh"
+      }
+    },
+    "longDescription": "Idle any game in your Steam library",
+    "shortDescription": "Steam Game Idler",
+    "macOS": {
+      "entitlements": null,
+      "exceptionDomain": "",
+      "frameworks": [],
+      "providerShortName": null,
+      "signingIdentity": null
+    },
+    "resources": ["libs/*", "LICENSE", "THIRD-PARTY-NOTICES.md", ".installed"],
+    "linux": {
+      "deb": {
+        "depends": ["libsecret-1-0"]
+      },
+      "rpm": {
+        "depends": ["libsecret"]
+      },
+      "appimage": {
+        "bundleMediaFramework": true
+      }
+    },
+    "licenseFile": "LICENSE",
+    "createUpdaterArtifacts": "v1Compatible"
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQyMTE5REMyMUFGRUYyQzcKUldUSDh2NGF3cDBSMGh6UVk2a1NKNFV0d1BBcnZsRnFFdDkvTTR0KzJQN0hjOTJzSWFpMFhGaysK",
+      "endpoints": [
+        "https://raw.githubusercontent.com/zevnda/steam-game-idler/main/latest.json",
+        "https://cdn-steamgameidler.com/updater/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "main",
+        "create": false,
+        "title": "Steam Game Idler",
+        "width": 1300,
+        "height": 850,
+        "minWidth": 920,
+        "minHeight": 620,
+        "fullscreen": false,
+        "resizable": true,
+        "decorations": false,
+        "transparent": true,
+        "focus": false,
+        "visible": false,
+        "useHttpsScheme": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  }
+}

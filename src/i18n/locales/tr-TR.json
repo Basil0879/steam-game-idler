@@ -1,0 +1,776 @@
+{
+  "common": {
+    "actions": {
+      "submit": "Göndermek",
+      "cancel": "İptal",
+      "tryAgain": "Tekrar dene",
+      "continue": "Devam Et",
+      "refresh": "Yenile",
+      "save": "Kaydet",
+      "settings": "Ayarlar",
+      "signIn": "Giriş Yap",
+      "signOut": "Çıkış Yap",
+      "start": "Başlat",
+      "stop": "Durdur",
+      "clear": "Temizle",
+      "done": "Bitti",
+      "copy": "Kopyala",
+      "paste": "Yapıştır",
+      "add": "Ekle",
+      "ok": "Tamam"
+    },
+    "gameCardMenu": {
+      "startIdling": "Süre Kasmayı başlat",
+      "stopIdling": "Süre Kasmayı durdur",
+      "manageAchievements": "Başarımları Yönet",
+      "customOrder": "Özel Sıralama ve Kilit Açma Gecikmesi",
+      "viewOnSteam": "Steam'de Görüntüle",
+      "copyAppId": "Uygulama Kimliğini Kopyala",
+      "appIdCopied": "Uygulama Kimliğini Kopyalandı",
+      "cardFarmingBlacklist": "Kart Düşürme Kara Listesi",
+      "lists": "Listeler"
+    },
+    "minutes": "dakika",
+    "zeroUnlimitedHint": "0 = sınırsız",
+    "errorBoundary": {
+      "title": "Bir şeyler ters gitti",
+      "description": "Beklenmedik bir hata meydana geldi. Tekrar deneyin, eğer hata devam ederse Yardım & Destek 'den bizimle iletişime geçin."
+    },
+    "manualCookies": {
+      "slsLabel": "steamLoginSecure",
+      "smaLabel": "steamMachineAuth",
+      "smaDescription": "İsteğe bağlı. Sadece hesabınızda bekleyen bir Steam Guard cihaz onayı varsa gereklidir.",
+      "getCookiesNote": "Çerezlerinizi şuradan almalısınız",
+      "savedFromSettingsNote": "Ayarlarda kayıtlı Steam kimlik bilgilerinden yüklendi.",
+      "savedToast": "Kimlik bilgileri kaydedildi",
+      "clearedToast": "Kimlik bilgileri temizlendi",
+      "clearFailed": "Kaydedilmiş Steam kimlik bilgileriniz temizlenemedi. ({{code}})"
+    },
+    "manualAdd": {
+      "title": "Oyunu manuel olarak ekle",
+      "description": "Oyun otomatik olarak görünmüyorsa, kendi Steam App ID'sini kullanarak ekleyin.",
+      "nameLabel": "İsim",
+      "namePlaceholder": "örn. K-On! The Movie",
+      "appIdLabel": "App ID",
+      "appIdPlaceholder": "örn. 518440",
+      "duplicateError": "Bu App ID zaten listede mevcut"
+    },
+    "search": {
+      "placeholder": "Ara",
+      "recentSearches": "Son aramalar",
+      "noRecentSearches": "Son arama yok",
+      "noResults": "Sonuç bulunamadı",
+      "noResultsTitle": "Aramanızla eşleşen bir oyun yok",
+      "noResultsDescription": "Farklı bir başlık veya App ID deneyin."
+    },
+    "errors": {
+      "generic": "Bir şeyler ters gitti. Lütfen tekrar deneyin. ({{code}})",
+      "steamUtilityMissing": "Steam ajanı bileşeni bu kurulumda eksik.",
+      "processSpawnFailed": "Steam ajanı işlemi başlatılamadı.",
+      "processExited": "Steam ajanı beklenmedik bir şekilde kapandı.",
+      "timeout": "Steam'in yanıt vermesi çok uzun sürdü. Lütfen tekrar deneyin.",
+      "sessionNotFound": "Steam oturumunuz artık aktif değil. Lütfen tekrar oturum açın.",
+      "steamIdUnknown": "Steam ID'niz henüz çözülemedi. Lütfen bir dakika sonra tekrar deneyin.",
+      "steamNotRunning": "Steam çalışmıyor. Lütfen Steam'i başlatın ve tekrar deneyin."
+    },
+    "notifications": "Bildirimler",
+    "menu": "Menü",
+    "needHelp": "Yardım mı lazım?",
+    "learnMore": "Daha fazla bilgi edinin",
+    "status": {
+      "saved": "Kaydedildi",
+      "cleared": "Temizlendi",
+      "paused": "Duraklatıldı",
+      "running": "Çalışıyor"
+    },
+    "steamWarning": {
+      "title": "Uyarı",
+      "description": "Steam kapalı. Devam etmek için lütfen Steam'i yeniden başlatın."
+    },
+    "banner": {
+      "pastDue": "PRO aboneliğinizin vadesi geçmiş. Erişimi kaybetmemek için lütfen ödeme yönteminizi güncelleyin.",
+      "manageSubscription": "Aboneliği Yönet"
+    },
+    "badges": {
+      "beta": "Deneme"
+    },
+    "tabs": {
+      "allGames": "Tüm Oyunlar",
+      "queue": "Kuyruk",
+      "overview": "Genel Bakış",
+      "details": "Detaylar"
+    },
+    "connect": {
+      "automaticTab": "Otomatik",
+      "manualTab": "Manuel"
+    },
+    "sort": {
+      "nameAsc": "İsim (A'dan Z'ye)",
+      "nameDesc": "İsim (Z-A)"
+    },
+    "noGamesQueued": "Sıraya alınmış oyun yok",
+    "completedThisSessionCount": "Bu oturumda tamamlanan ({{count}})"
+  },
+  "versionPolicy": {
+    "outdated": {
+      "title": "Güncelleme öneriliyor",
+      "description": "Steam Game Idler'ın bu sürümü yakında çalışmayacak. Kesintisiz kullanmaya devam etmek için şimdi güncelle."
+    },
+    "unsupported": {
+      "title": "Güncelleme Gerekiyor",
+      "description": "Steam Game Idler'ın bu sürümü artık desteklenmiyor. Uygulamayı kullanmaya devam etmek için en son sürüme güncelle"
+    },
+    "currentVersion": "Sürümünüz: {{version}}",
+    "installUpdate": "Güncellemeyi yükle",
+    "downloadUpdate": "Güncellemeyi indir",
+    "remindLater": "Daha sonra hatırlat"
+  },
+  "update": {
+    "downloading": "Güncelleme yükleniyor..."
+  },
+  "legacyInstall": {
+    "title": "Eski dosyalar silinsin mi?",
+    "description": "Güncellemeler artık yönetici izni gerektirmiyor. Önceki sürüm geride bazı dosyalar bıraktı ve Windows bunları silmek için son bir kez izin isteyecek. Çalışan hiçbir işlem durdurulmayacak.",
+    "remove": "Kaldır",
+    "removed": "Eski dosyalar silindi"
+  },
+  "toast": {
+    "checkUpdate": {
+      "none": "Zaten en son sürümdesiniz",
+      "error": "Güncellemeleri kontrol edemedim. Lütfen tekrar deneyin."
+    },
+    "paypalCheckout": {
+      "error": "PayPal ödeme işlemi başlatılamadı. Lütfen tekrar deneyin."
+    }
+  },
+  "notifications": {
+    "markAllRead": "Hepsini okundu olarak işaretle",
+    "empty": "Henüz bildirim yok"
+  },
+  "menu": {
+    "guide": "Dökümanlar",
+    "issue": "Sorun bildir",
+    "feature": "Özellik İsteği",
+    "joinDiscord": "Discord kanalımıza katıl",
+    "changelog": "Değişiklikler",
+    "update": "Güncellemeleri kontrol et"
+  },
+  "changelog": {
+    "star": "GitHub’da Yıldızla"
+  },
+  "titlebar": {
+    "closeToTrayNotification": "Steam Game Idler arka planda çalışmaya devam edecek",
+    "helpDesk": "Yardım Masası",
+    "updateReady": "Güncelleme hazır"
+  },
+  "tray": {
+    "show": "Göster",
+    "recenter": "Pencere Konumunu Sıfırla",
+    "update": "Güncellemeleri kontrol edin..",
+    "quit": "Çıkış"
+  },
+  "proMode": {
+    "hero": {
+      "headline": "Daha fazla özelliğin kilidini aç",
+      "subtext": "SGI'ın temel özellikleri <1>ücretsizdir</1> ve <3>her zaman ücretsiz kalacaktır</3>. PRO yalnızca SGI'ın sürekli gelişimini desteklemek isteyen kullanıcılar içindir; sunduğumuz ek özellikler ise desteğiniz için <5>teşekkür etme</5> şeklimizdir.",
+      "viewTiers": "PRO Planlarını Görüntüle",
+      "startingAt": "Ayda ${{price}}'dan başlayan fiyatlarla · İstediğiniz zaman iptal edin"
+    },
+    "section": {
+      "topFeatures": "Bütün Özellikler",
+      "seeAllFeatures": "Bütün Özellikleri Görüntüle",
+      "chooseTier": "Seviyenizi Seçin",
+      "comparePlans": "Seviyeleri Karşılaştır",
+      "faq": "SSS"
+    },
+    "cards": {
+      "adFree": {
+        "title": "Reklamsız Deneyim",
+        "description": "Tamamen temiz ve dikkat dağıtmayan bir arayüz için SGI'yı reklamsız kullanın."
+      },
+      "themes": {
+        "title": "Özel Temalar"
+      },
+      "customBackground": {
+        "title": "Özel Arkaplan Resmi"
+      },
+      "customFont": {
+        "title": "Özel Yazı Tipleri"
+      },
+      "liveSupport": {
+        "title": "Eş-Zamanlı Canlı Destek",
+        "description": "Sırayı atlayın — uygulama içi yardım masası üzerinden doğrudan geliştiriciyle gerçek zamanlı iletişime geçin ve destek alın."
+      },
+      "credentials": {
+        "title": "Steam Kimlik Bilgilerini Otomatik Alma"
+      },
+      "multiAccount": {
+        "title": "Çoklu Hesap Desteği",
+        "description": "Aynı anda birden fazla Steam hesabında oturum açın ve yönetin."
+      },
+      "autoFarmCards": {
+        "description": "SGI, kütüphanenizi izler ve hâlâ kart düşürme hakkı bulunan oyunlarda kart kasmayı otomatik olarak başlatır."
+      },
+      "gamesList": {
+        "title": "Oyun Listesini Otomatik Güncelleme",
+        "description": "Oyun listeniz, yeni oyun ekledikçe ve oyun oynadıkça her 15 dakikada bir otomatik olarak güncellenir."
+      },
+      "multipleUnlockerGames": {
+        "title": "Birden Fazla Oyun İçin Başarı Kazan",
+        "description": "Achievement Unlocker'da başarıları tek tek değil, aynı anda birden fazla oyun için açın."
+      },
+      "freeGames": {
+        "title": "Ücretsiz Oyun Alma",
+        "description": "Steam'de ücretsiz oyunlar erişime açıldığı anda otomatik olarak hesabınıza ekleyin; hiçbir ücretsiz oyunu kaçırmayın."
+      },
+      "sellDupes": {
+        "description": "Tek tıklamayla envanterinizdeki tüm yinelenen eşyaları kolayca satışa çıkarın."
+      },
+      "customPresence": {
+        "title": "Özel Steam Durumu"
+      }
+    },
+    "tier": {
+      "mostPopular": "En popüler",
+      "perMonth": "/ay",
+      "everythingInCasualPlus": "Casual planındaki her şey, ayrıca",
+      "currentPlan": "Şuanki Plan",
+      "continueWithStripe": "Stripe",
+      "continueWithPaypal": "PayPal",
+      "processing": "İşleniyor...",
+      "cancelAnytime": "İstediğinde İptal Et",
+      "casual": {
+        "name": "Sıradan",
+        "discordRole": "Discord PRO Rolü",
+        "multiAccount": "Aynı Anda 3 Hesap",
+        "multipleUnlockerGames": "Tek seferde 3 Oyun aç"
+      },
+      "gamer": {
+        "name": "Oyuncu",
+        "freeGames": "Otomatik Ücretsiz Oyun Alma",
+        "importTimings": "Başarı Kilidi Açma Zamanlarını İçe Aktar",
+        "multipleUnlockerGames": "Aynı Anda 32 Oyunun Kilidini Aç",
+        "multiAccount": "Aynı Anda 10 Hesap"
+      }
+    },
+    "faq": {
+      "subscriptionNotActivated": {
+        "q": "PRO satın aldım ancak aboneliğim etkinleşmedi?",
+        "a": "Satın alma işlemini tamamladıktan sonra lisans anahtarınızı içeren bir e-posta alacaksınız. Uygulamayı açın, Ayarlar → Abonelik bölümüne gidin, lisans anahtarınızı ilgili alana yapıştırın ve Etkinleştir'e tıklayın. Sorun devam ederse, uygulamanın sağ üst köşesindeki yardım masası üzerinden veya contact@steamgameidler.com adresinden bizimle iletişime geçin."
+      },
+      "transferDevice": {
+        "q": "Lisans anahtarımı nasıl yeni bir cihaza aktarabilirim?",
+        "a": "Lisans anahtarınız aynı anda yalnızca tek bir cihaza bağlı olabilir. Başka bir cihaza aktarmak için yeni cihazınızda uygulamayı açın, Ayarlar → Abonelik bölümüne gidin, lisans anahtarınızı girin ve Etkinleştir'e tıklayın. Aktarımı onaylamanızı isteyen bir pencere açılacaktır. Onayladıktan sonra yeni cihazınız etkinleşir ve önceki cihaz uygulamayı bir sonraki açışında erişimini kaybeder. Uygulamayı aynı bilgisayara yeniden yüklediyseniz herhangi bir aktarım yapmanız gerekmez; cihazınız donanım kimliği (Hardware ID) sayesinde otomatik olarak tanınır."
+      },
+      "cancel": {
+        "q": "Aboneliğimi nasıl iptal edebilirim?",
+        "a": "Ayarlar → Abonelik → Aboneliği Yönet bölümüne gidin ve iptal adımlarını takip edin. Aboneliğinizi iptal ettikten sonra, mevcut faturalandırma döneminiz sona erene kadar PRO avantajlarından yararlanmaya devam edebilirsiniz."
+      },
+      "switchTier": {
+        "q": "Planlar arasında geçiş yapabilir miyim?",
+        "a": "Evet. Önce mevcut aboneliğinizi iptal edin, ardından standart abonelik sürecini izleyerek istediğiniz plana yeniden abone olun."
+      },
+      "invoices": {
+        "q": "Fatura ve makbuzları nerede bulabilirim?",
+        "a": "Abone olduktan sonra e-posta yoluyla bir ödeme makbuzu alırsınız. Tüm faturalandırma geçmişinizi görüntülemek için Ayarlar → Abonelik → Aboneliği Yönet bölümüne gidin."
+      },
+      "refund": {
+        "q": "İade politikaları nelerdir?",
+        "a": "PRO abonelikleri bağış olarak değerlendirildiğinden, genel olarak iade edilmez. Ancak iade talepleri duruma göre ayrı ayrı değerlendirilir. Uygulamanın sağ üst köşesindeki yardım masası üzerinden veya contact@steamgameidler.com adresinden bizimle iletişime geçebilirsiniz."
+      },
+      "chargeback": {
+        "q": "Ödeme itirazında bulunursam ne olur?",
+        "a": "Haksız yere yapılan ödeme itirazları, bu küçük bağımsız projeye ciddi zarar verir. Bizimle önceden iletişime geçmeden ödeme itirazında bulunmanız durumunda, bu uygulamaya erişiminiz kalıcı olarak iptal edilebilir. Faturalandırmayla ilgili bir hata varsa, sorunu mümkün olan en kısa sürede çözmek için size memnuniyetle yardımcı oluruz. Lütfen uygulamanın sağ üst köşesindeki yardım masası üzerinden veya contact@steamgameidler.com adresinden bizimle iletişime geçin."
+      }
+    },
+    "modal": {
+      "footer": "Gösterilen fiyatlar ABD doları (USD) cinsindendir ve bulunduğunuz konuma ile kullandığınız ödeme yöntemine bağlı olarak uygulanabilecek vergiler veya döviz dönüşüm ücretlerini içermez."
+    },
+    "comparisonTable": {
+      "learnMoreFeatures": "Her özellik hakkında daha fazla bilgi edinin"
+    }
+  },
+  "auth": {
+    "landing": {
+      "agentButton": "Steam Girişi",
+      "localAlreadySignedIn": "Yerel Steam istemcisinde zaten oturum açılmış bir hesap var — aynı anda yalnızca bir hesapta oturum açılabilir.",
+      "acknowledge": "Devam ederek <0>Hizmet Şartları</0>'nı kabul etmiş ve <1>Gizlilik Politikamızı</1> okuduğunuzu onaylamış olursunuz."
+    },
+    "signIn": {
+      "usernameLabel": "Kullanıcı adı",
+      "usernamePlaceholder": "Steam kullanıcı adınızı giriniz",
+      "passwordLabel": "Şifre",
+      "passwordPlaceholder": "Steam şifrenizi giriniz",
+      "usernameRequired": "Steam kullanıcı adınızı giriniz.",
+      "passwordRequired": "Steam şifrenizi giriniz.",
+      "guardCode": {
+        "deviceTitle": "Steam mobil uygulamanı kontrol et",
+        "deviceDescription": "Steam mobil uygulamasındaki kodu gir.",
+        "emailTitle": "Email'ini kontrol et",
+        "emailDescription": "{{email}}'a bir kod gönderdik. Aşağıya yazabilirsin.",
+        "confirmationTitle": "Bu girişi onayla",
+        "confirmationDescription": "Devam etmek için Steam mobil uygulamasından bu girişi onayla.",
+        "codeLabel": "Steam Guard kodu",
+        "incorrectCode": "Kod yanlış. Lütfen tekrar dene.",
+        "submitButton": "Doğrula"
+      },
+      "qrCode": {
+        "instructions": "QR kod ile giriş yapmak için Steam mobil uygulamasını kullan."
+      },
+      "errors": {
+        "title": "Giriş yapılamıyor",
+        "invalidCredentials": "Kullanıcı adı veya şifre hatalı.",
+        "denied": "Steam mobil uygulamasında giriş talebi reddedildi. Lütfen tekrar deneyin.",
+        "generic": "Giriş yaparken birşeyler ters gitti. Lütfen tekrar deneyin.({{code}})"
+      }
+    },
+    "localSignIn": {
+      "title": "Bir hesap seçin",
+      "noAccounts": "Cihazda herhangi bir Steam hesabı bulunamadı. En az bir kere Steam istemcisine giriş yapıp sayfayı yenileyin.",
+      "errors": {
+        "steamNotFound": "Yerel bir Steam yüklemesi bulunamadı.",
+        "loginVdfUnreadable": "Bu cihazın kayıtlı Steam hesapları okunamıyor.",
+        "accountNotFound": "Bu hesap artık bulunamıyor.",
+        "switchFailed": "Steam hesapları arasında geçiş yapılamıyor.",
+        "launchFailed": "Steam istemcisi başlatılamıyor.",
+        "summaryUnavailable": "Şuan hesap detayları yüklenemiyor."
+      }
+    }
+  },
+  "dashboard": {
+    "sidebar": {
+      "nav": {
+        "games": "Oyunlar",
+        "idling": "Boşta Çalıştırma",
+        "favorites": "Favoriler",
+        "freeGames": "Bedava Oyunlar",
+        "cardFarming": "Kart Kasma",
+        "achievementUnlocker": "Başarım Açıcı",
+        "autoIdle": "Otomatik Kasıcı",
+        "inventoryManager": "Envanter Yöneticisi"
+      },
+      "signOut": {
+        "confirmTitle": "Çıkış yapmak istiyor musun?",
+        "confirmDescription": "Bu işlem, {{name}} için şu anda çalışan otomasyonu durduracak ve hesabın oturumunu kapatacaktır.",
+        "error": "Oturum kapatma temizleme işlemi tamamen tamamlanamadı, ancak hesabınızdan çıkış yapıldı."
+      },
+      "tier": {
+        "free": "Bedava"
+      },
+      "accountSwitcher": {
+        "modeAgent": "Steam ile giriş yap",
+        "modeLocal": "Yerel Steam istemcisi",
+        "switched": "{{name}} değiştirildi",
+        "steamRequired": "Bu hesaba geçiş yapmak için Steam'in çalışıyor olması gerekiyor",
+        "addAccount": {
+          "trigger": "Başka bir hesap ekle",
+          "capReachedMax": "Steam ile aynı anda oturum açılabilecek maksimum hesap sayısına ulaştınız.",
+          "added": "{{name}} eklendi"
+        },
+        "reauth": {
+          "badge": "Başka bir yerde oturum açılmış",
+          "modalTitle": "Başka bir cihazda oturum açık",
+          "modalDescription": "{{account}} başka bir cihazda oturum açtığı için otomasyonu duraklatıldı. Devam etmek için tekrar oturum açın.",
+          "reconnect": "Yeniden bağlan",
+          "useDifferentMethod": "Farklı bir oturum açma şekli deneyin"
+        }
+      }
+    },
+    "games": {
+      "unknownName": "Uygulama {{appId}}",
+      "carousels": {
+        "recommended": "Önerilen"
+      },
+      "sort": {
+        "playtimeDesc": "Oyun Süresi (Yüksek-Düşük)",
+        "playtimeAsc": "Oyun Süresi (Düşük-Yüksek)",
+        "recentlyPlayedDesc": "Son Oynanan (En Yeni)",
+        "recentlyPlayedAsc": "Son Oynanan (En Eski)"
+      },
+      "empty": {
+        "title": "Oyun bulunamadı",
+        "description": "Bu hesap henüz bir oyuna sahip değil."
+      },
+      "errors": {
+        "title": "Oyunlar yüklenemiyor",
+        "webApiUnavailable": "Steam'den şuanda oyun süresi verisi yüklenemiyor.",
+        "cacheIoFailed": "Oyun önbelleği okunamadı veya yazılamadı.",
+        "generic": "Oyunlarınız yüklenirken bir hata oluştu. Lütfen tekrar deneyin. ({{code}})"
+      },
+      "privacyWarning": {
+        "title": "Bazı oyun verileri eksik olabilir",
+        "description": "Steam profiliniz veya oyun ayrıntılarınız gizli olarak ayarlanmış görünüyor. Bu nedenle oyun süresi, son oynanan oyunlar ve bazı oyun bilgileri eksik olabilir. Bu sorunu düzeltmek için profilinizi herkese açık yapın veya Ayarlar bölümünden kendi Steam Web API anahtarınızı ekleyin.",
+        "changeSettings": "Gizlilik ayarlarını değiştir",
+        "useOwnKey": "Kendi API anahtarımı ekle"
+      }
+    },
+    "idling": {
+      "stopAll": "Hepsini durdur",
+      "sections": {
+        "manual": "Manuel olarak boşta çalışıyor",
+        "other": "Diğer"
+      },
+      "errors": {
+        "startFailed": "Bu oyunu boşta çalıştırma başlatılamadı.",
+        "maxPlaytimeCapReached": "Bu oyun zaten maksimum oynama süresi sınırına ulaşmış.",
+        "generic": "Boşta çalıştırma güncellenirken bir hata oluştu. Lütfen tekrar deneyin. ({{code}})"
+      }
+    },
+    "favorites": {
+      "confirmClear": {
+        "title": "Tüm favoriler temizlensin mi?",
+        "description": "Bu işlem, favori listenizdeki tüm {{count}} oyunu kaldıracaktır."
+      },
+      "empty": {
+        "title": "Henüz favoriniz yok",
+        "description": "Burada görmek için Tüm Oyunlar sekmesinden oyun ekleyin."
+      },
+      "errors": {
+        "title": "Favoriler güncellenemiyor",
+        "cacheIoFailed": "Favoriler önbelleği okunamadı veya yazılamadı.",
+        "generic": "Favoriler güncellenirken bir hata oluştu. Lütfen tekrar deneyin. ({{code}})"
+      }
+    },
+    "freeGames": {
+      "actions": {
+        "claim": "Al",
+        "claimed": "Alındı"
+      },
+      "outcomes": {
+        "alreadyOwned": "Bu oyuna zaten sahipsin."
+      },
+      "empty": {
+        "title": "Şuanda ücretsiz oyun yok",
+        "description": "Daha sonra tekrar kontrol edin — Steam belirli aralıklarla ücretsiz oyunlar sunar."
+      },
+      "errors": {
+        "title": "Ücretsiz oyun yüklenemiyor",
+        "scrapeFailed": "Şuanda ücretsiz oyunlar için Steam kontrol edilemiyor.",
+        "storeLoginFailed": "Steam Mağazasına giriş yapılamıyor. Lütfen tekrar dene.",
+        "storeLogoutFailed": "Steam Mağazasından çıkış yapılamıyor. Lütfen tekrar dene.",
+        "generic": "Ücretsiz oyunları yüklerken birşeyler ters gitti. Lütfen tekrar dene. ({{code}})"
+      },
+      "notifications": {
+        "title": "Ücretsiz Oyunlar Mevcut!",
+        "bodyOne": "{{name}} şuanda Steamde ücretsiz.",
+        "bodyMany": "{{count}} yeni oyun şuanda Steamde ücretsiz."
+      },
+      "autoRedeem": {
+        "success": "{{name}} Otomatik alındı",
+        "failure": "{{name}} Otomatik alınamadı"
+      },
+      "correction": {
+        "granted": "{{name}} Başarılı bir şekilde alındı — önceki bilgilendirme hatalıydı."
+      }
+    },
+    "achievements": {
+      "tabs": {
+        "achievements": "Başarımlar",
+        "statistics": "İstatistikler"
+      },
+      "header": {
+        "viewOnSteamDb": "SteamDB'de görüntüle"
+      },
+      "protectedAlert": {
+        "title": "Bazı eşyalar koruma altında",
+        "description": "Korumalı olarak görünen başarımlar ve istatistikler oyunun sunucusu tarafından ayarlanmıştır ve müşteriler tarafından değiştirilemez."
+      },
+      "unlockedCount": "{{unlocked}} / {{total}} açılan",
+      "noDescription": "Açıklama yok",
+      "protectedTooltip": "Sunucu tarafından ayarlanmıştır ve değiştirilemez.",
+      "edited": "Düzenlendi",
+      "incrementOnlyTooltip": "Bu istatislik daha artabilir, asla azalmaz.",
+      "sort": {
+        "percent": "Küresel açılan %",
+        "unlocked": "İlk açılan",
+        "locked": "İlk kitlenen",
+        "unprotected": "İlk korunmayan",
+        "protected": "İlk korunan"
+      },
+      "rarity": {
+        "common": "Yaygın",
+        "rare": "Nadir",
+        "epic": "Destansı",
+        "legendary": "Efsanevi"
+      },
+      "actions": {
+        "unlock": "Açmak",
+        "unlockAll": "Hepsinin kilidini aç",
+        "lockAll": "Hepsini Kilitle",
+        "saveChanges": "Değişiklikleri kaydet",
+        "resetAll": "Hepsini Sıfırla"
+      },
+      "confirmUnlockAll": {
+        "title": "Tüm başarımlar açılsın mı?",
+        "description": "Bu zaten kilidi açılmamış veya korulu olmayan tüm başarımların kilidini açar."
+      },
+      "confirmLockAll": {
+        "title": "Tüm başarımlar kilitlensin mi?",
+        "description": "Bu zaten kilitli veya korunan tüm başarımları kilitler."
+      },
+      "confirmApplyChanges": {
+        "title": "Kademeli değişiklikler uygulansın mı?"
+      },
+      "confirmResetStats": {
+        "title": "Tüm istatistikler sıfırlansın mı?",
+        "description": "Bu işlem, bu oyundaki tüm istatistikleri varsayılan değerlerine sıfırlayacak. Bu işlem geri alınamaz."
+      },
+      "empty": {
+        "title": "Başarım yok",
+        "description": "Bu oyunda herhangi bir başarım yok."
+      },
+      "emptyStats": {
+        "title": "İstatistik yok"
+      },
+      "searchNoResults": {
+        "title": "Aramanızla uyuşan bir sonuç yok",
+        "description": "Farklı bir terim kullanmayı deneyin."
+      },
+      "toasts": {
+        "achievementUnlocked": "''{{name}}'' açıldı",
+        "achievementLocked": "''{{name}}'' kitlendi",
+        "bulkNoChanges": "Değiştirilecek bir şey yok — zaten istenen durumda veya koruma altında.",
+        "applyPartialFailure": "Hazırlanan bazı başarımlar güncellenemedi. Lütfen tekrar deneyin.",
+        "statsReset": "İstatistikler sıfırlandı"
+      },
+      "errors": {
+        "title": "Başarımlar yüklenemiyor",
+        "invalidApp": "Bu uygulama başarım verisine sahip değil.",
+        "achievementNotFound": "Belirtilen başarım bulunamıyor.",
+        "protected": "Bu değer oyun sunucusu tarafından belirlenir ve değiştirilemez.",
+        "unsupportedGameCoordinator": "Bu oyun, Steam ile oturum açıldığında başarımları desteklemiyor. Bunun yerine yerel Steam istemcinizi kullanın.",
+        "unsupportedGameCoordinatorLinux": "Bu oyun, Steam ile oturum açıldığında başarımları desteklemiyor.",
+        "generic": "Başarımlar yüklenirken bir sorun oluştu. Lütfen tekrar deneyin. ({{code}})"
+      }
+    },
+    "cardFarming": {
+      "actions": {
+        "stop": "Kasmayı durdur"
+      },
+      "multiGameNotice": {
+        "title": "Tek seferde birden fazla oyun kasılsın mı?"
+      },
+      "confirmClearBlacklist": {
+        "title": "Kart kasma kara listesi temizlensin mi?",
+        "description": "Bu işlem, {{count}} oyunun tamamını kart kasma kara listesinden kaldıracak."
+      },
+      "tabs": {
+        "gamesWithDrops": "Kart Düşen Oyunlar",
+        "blacklisted": "Kara listede olan oyunlar"
+      },
+      "sort": {
+        "dropsDesc": "Kalan Kart Sayısı (Çoktan Aza)",
+        "dropsAsc": "Kalan Kart Sayısı (Azdan Çoğa)"
+      },
+      "browseEmpty": {
+        "title": "Kalan kart düşüşü yok",
+        "description": "Sahip olduğunuz tüm oyunlardaki kartlar ya tamamen kasıldı ya da şu anda düşürülebilecek kart bulunmuyor."
+      },
+      "blacklistEmpty": {
+        "title": "Kara listede oyun yok"
+      },
+      "connect": {
+        "automaticDescription": "Kart düşüşlerini kontrol etmek için Steam Topluluğu'nda otomatik olarak oturum açar."
+      },
+      "progress": {
+        "queueTitle": "Sıradaki ({{count}})",
+        "completedNoDropsRemaining": "Kasılacak kart kalmadı",
+        "completedRefundWindow": "İade süresi hâlâ devam ediyor ({{date}} tarihinde tekrar kasılabilir)"
+      },
+      "errors": {
+        "title": "Kart kasma güncellenemedi",
+        "sessionFailed": "Steam Topluluğu'nda oturum açılamadı. Çerezlerinizi kontrol edip tekrar deneyin.",
+        "sessionExpired": "Steam Topluluğu oturumunuzun süresi doldu. Devam etmek için lütfen yeniden bağlanın.",
+        "scrapeFailed": "Şu anda Steam'deki kart düşüşleri kontrol edilemiyor.",
+        "generic": "Kart kasma güncellenirken bir sorun oluştu. Lütfen tekrar deneyin. ({{code}})"
+      },
+      "settings": {
+        "skipRefundableGames": {
+          "title": "İade edilebilir oyunları atla"
+        },
+        "autoFarmCards": {
+          "description": "Kart düşüşü kalan sahip olduğunuz oyunları düzenli olarak kontrol eder ve bunların kartlarını otomatik olarak kasmaya başlar."
+        },
+        "skipNoPlaytime": {
+          "title": "Oynanmamış oyunları atla",
+          "description": "Oyun süresi sıfır olan oyunları kasma."
+        },
+        "farmUnplayedOnly": {
+          "title": "Sadece oynanmayan oyunlar",
+          "description": "Sadece oyun süresi sıfır olan oyunları kas"
+        },
+        "nextTask": {
+          "title": "İş bitince başka bir göreve başla",
+          "description": "Kart kasma tamamlandığında, otomatik olarak başka bir otomasyonu başlatır."
+        }
+      }
+    },
+    "achievementUnlocker": {
+      "addAllToQueue": "Hepsini sıraya ekle",
+      "confirmAddAllToQueue": {
+        "title": "Eklenen tüm oyunlar {{count}} sıraya eklensin mi?",
+        "description": "Her oyunun başarımları taranmalıdır. Büyük bir oyun kütüphanesinde bu işlem uzun sürebilir. Oyunları manuel olarak eklemeniz önerilir."
+      },
+      "confirmClearQueue": {
+        "title": "Başarım açma kuyruğu temizlensin mi?",
+        "description": "Bu işlem, {{count}} oyunun tamamını başarım açma kuyruğundan kaldıracak."
+      },
+      "empty": {
+        "description": "Oyunları otomatik başarım açma kuyruğuna eklemek için Tüm Oyunlar sekmesinden ekleyin."
+      },
+      "settings": {
+        "idle": {
+          "title": "Başarımlar açılırken oyunu boşta çalıştır",
+          "description": "Başarımlar açılırken oyunu boşta çalıştırır."
+        },
+        "hidden": {
+          "title": "Gizli başarımları atla",
+          "description": "Steam'in gizli olarak işaretlediği başarımları açma."
+        },
+        "multipleGames": {
+          "title": "Aynı anda birden fazla oyun çalıştır",
+          "description": "Oyunları tek tek çalıştırmak yerine, kuyruktaki en fazla {{count}} oyunu aynı anda işler."
+        },
+        "interval": {
+          "title": "Başarım açma aralığı",
+          "description": "Her başarım açma işlemi arasında {{min}} ile {{max}} dakika arasında rastgele bekler."
+        },
+        "schedule": {
+          "title": "Başarımları yalnızca belirlenen zaman aralığında aç",
+          "description": "Başarımları yalnızca aşağıda belirtilen saatler arasında açar."
+        },
+        "nextTask": {
+          "description": "Kuyruk boşaldığında, otomatik olarak başka bir otomasyonu başlatır."
+        }
+      },
+      "order": {
+        "reset": "Sıfırla",
+        "skipped": "Atlandı",
+        "empty": {
+          "title": "Sıralanacak öğe kalmadı",
+          "description": "Bu oyunda açılacak başka başarım kalmadı."
+        },
+        "toasts": {
+          "saved": "Başarım sıralaması kaydedildi"
+        }
+      },
+      "importTimings": {
+        "title": "Zamanlamaları içe aktar",
+        "description": "Başka bir oyuncunun gerçek başarım açma zamanlarını alır ve bunları kullanarak her başarım için gerçekçi bekleme süreleri oluşturur.",
+        "inputPlaceholder": "SteamID64, profil URL'si veya özel profil URL'si",
+        "importButton": "İçe aktar",
+        "errors": {
+          "profilePrivate": "Bu profil gizli veya herkese açık başarım verisi bulunmuyor.",
+          "noTimestamps": "Bu oyuncunun bu oyun için zaman damgasına sahip başarımı bulunmuyor.",
+          "notFound": "Bu profil çözümlenemedi.",
+          "generic": "Zamanlamalar şu anda içe aktarılamadı. Lütfen tekrar deneyin. ({{code}})"
+        }
+      },
+      "progress": {
+        "scanning": "Kuyruktaki oyunlarda açılacak başarımlar kontrol ediliyor",
+        "scanningCount": "{{total}} oyundan {{checked}} tanesi kontrol edildi",
+        "starting": "Başlıyor…",
+        "waitingForSchedule": "Planlanan başarım açma zaman aralığı bekleniyor",
+        "currentGame": "Geçerli oyun",
+        "upNext": "Sıradaki",
+        "completedCount": "{{unlocked}}/{{total}} başarım açıldı",
+        "completedMaxUnlocksReached": "{{unlocked}}/{{total}} başarım açıldı (en fazla açma sınırına ulaşıldı)",
+        "completedMaxPlaytimeWithCount": "{{unlocked}}/{{total}} başarım açıldı (maksimum oynama süresine ulaşıldı)",
+        "completedMaxPlaytime": "Maksimum oynama süresine ulaşıldı",
+        "completedNothingToUnlock": "Açılacak bişey kalmadı"
+      },
+      "errors": {
+        "title": "Başarım açıcı güncellenemedi",
+        "queueCacheIoFailed": "Başarım açma kuyruğu okunamadı veya yazılamadı.",
+        "settingsIoFailed": "Başarım açıcı ayarları okunamadı veya yazılamadı.",
+        "orderIoFailed": "Bu oyunun başarım sıralaması okunamadı veya yazılamadı."
+      }
+    },
+    "autoIdle": {
+      "confirmClearQueue": {
+        "title": "Otomatik boşta çalışma kuyruğu temizlensin mi?",
+        "description": "Bu işlem, {{count}} oyunun tamamını otomatik boşta çalışma kuyruğundan kaldıracak."
+      },
+      "empty": {
+        "description": "Uygulama her açıldığında oyunların otomatik olarak boşta çalıştırılması için onları Tüm Oyunlar sekmesinden ekleyin."
+      },
+      "errors": {
+        "title": "Otomatik boşta çalıştırıcı güncellenemedi",
+        "cacheIoFailed": "Otomatik boşta çalışma kuyruğu okunamadı veya yazılamadı.",
+        "generic": "Otomatik boşta çalıştırıcı güncellenirken bir hata oluştu. Lütfen tekrar deneyin. ({{code}})"
+      }
+    },
+    "inventoryManager": {
+      "fetchingPrice": "Fiyat getiriliyor…",
+      "badgeLevel": "Rozet seviyesi {{level}}",
+      "noBadge": "Rozet yapılmadı",
+      "connect": {
+        "automaticDescription": "Envanterinizi yüklemek için Steam Topluluğu'na otomatik olarak giriş yapar."
+      },
+      "settings": {
+        "pricePreference": {
+          "options": {
+            "lowestSellOrder": "En düşük fiyatlı satış emri"
+          }
+        },
+        "priceAdjustment": {
+          "title": "Fiyat düzenleme",
+          "description": "Otomatik olarak doldurulan veya manuel olarak girilen her liste fiyatına {{value}} ekler."
+        },
+        "sellLimit": {
+          "description": "Sadece {{min}} ve {{max}} arasındaki fiyatta ürünleri listele."
+        },
+        "sellDelay": {
+          "description": "Aşırı satış sınırlamasından kaçınmak için her bir öğenin listelenmesi arasında {{value}} saniye kadar bekleyin."
+        }
+      },
+      "toasts": {
+        "noListings": "Aktif market listelemeniz bulunmamaktadır.",
+        "removedListings": "{{total}} listelenmelerden {{count}} adet listeleme kaldırıldı",
+        "removeFailed": "Listelenme silinemiyor.",
+        "priceFetchCooldown": "Lütfen daha fazla ürün fiyatı getirmeden önce {{seconds}} saniye kadar bekleyiniz",
+        "itemLocked": "Bu öğe kilitlenmiş listelenemez."
+      },
+      "errors": {
+        "title": "Envanteriniz güncellenemedi",
+        "fetchFailed": "Şuanda Steam Topluluk envanteriniz yüklenemiyor.",
+        "cacheIoFailed": "Envanter önbelleğiniz okunamadı veya üzerine yazılamadı.",
+        "priceFetchFailed": "Şuanda topluluk fiyatı getirilemiyor.",
+        "priceRateLimited": "Steam şu anda fiyat aramalarında hız sınırlayıcı uygulama yapıyor. Lütfen kısa bir süre sonra tekrar deneyin.",
+        "itemNotFound": "Bu öğe önbelleğe alınmış envanterinizde bulunamadı.",
+        "listingsFetchFailed": "Aktif pazar listelemeleriniz okunamadı.",
+        "settingsIoFailed": "Envanter ayarlarınızı okunamadı veya üzerine yazılamadı.",
+        "generic": "Envanteriniz güncellenirken bir şeyler yanlış gitti. Lütfen tekrar deneyiniz. Hata kodu: ({{code}})"
+      }
+    },
+    "settings": {
+      "general": {
+        "title": "Genel",
+        "account": {
+          "steamIdLabel": "Steam Kimliği"
+        },
+        "apiKey": {
+          "label": "Steam Tarayıcı arayüzü API anahtarı",
+          "placeholder": "Yerleşik bir anahtar kullanmak için boş bırak",
+          "description": "Uygulamanın yerleşik Steam Web API anahtarını geçersiz kılar."
+        },
+        "antiAway": {
+          "label": "Her Zaman Çevrimiçi",
+          "description": "Aralıklarla Steam durumunuzu yeniler bu sayede steam de boşta durumda gözükmezsiniz."
+        },
+        "runAtStartup": {
+          "label": "Açılışta çalıştır",
+          "description": "Steam Game Idler Windows'a giriş yaptığınızda otomatik açılır."
+        },
+        "startMinimized": {
+          "label": "Simge durumunda başlat",
+          "description": "Pencereyi göstermek yerine sistem tepsisinde gizli olan Steam Game Idler'ı başlatın."
+        },
+        "closeToTray": {
+          "label": "Küçük simge olarak kapat",
+          "description": "Pencereyi kapattığınızda Steam Game Idler'ı sistem tepsisinde çalışır durumda tutun."
+        }
+      }
+    }
+  }
+}

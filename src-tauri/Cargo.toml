@@ -1,0 +1,105 @@
+[package]
+name = "steam-game-idler"
+version = "6.5.2"
+authors = ["zevnda"]
+license = "Elastic-2.0"
+repository = "https://github.com/zevnda/steam-game-idler"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "steam_game_idler_lib"
+# Desktop-only app (Windows + Linux): the exe only links the rlib. Tauri's
+# Android/iOS targets need "staticlib"/"cdylib" re-added if mobile is ever added.
+crate-type = ["rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2.12.4", features = ["unstable", "tray-icon", "image-png"] }
+tokio = { version = "1", features = ["process", "io-util", "sync", "time", "rt", "macros"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+base64 = "0.22"
+thiserror = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-appender = "0.2"
+keyring = { version = "4.1.4", default-features = false, features = ["v1", "windows-native-keyring-store"] }
+steamlocate = "2.0.1"
+regex = { version = "1.11.1", default-features = false, features = ["std"] }
+reqwest = { version = "0.12.12", features = ["json", "gzip", "brotli", "deflate", "cookies"] }
+sysinfo = "0.36.0"
+scraper = "0.23"
+machine-uid = "0.5"
+futures = "0.3"
+rand = "0.8"
+chrono = "0.4"
+urlencoding = "2.1.3"
+tauri-plugin-opener = "2.7.1"
+tauri-plugin-dialog = "2.8"
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-window-state = "2.5"
+tauri-plugin-updater = "2.14.1"
+tauri-plugin-process = "2.3.0"
+tauri-plugin-single-instance = "2.4.2"
+tauri-plugin-autostart = "2.7.0"
+tauri-plugin-notification = "2.6.0"
+tauri-plugin-clipboard-manager = "2.4.2"
+
+# Win32 access for `legacy_install` (registry, shell links, self-elevation). Both are the versions
+# tauri/wry (`windows`) and auto-launch (`windows-registry`) already pull in, so neither adds a
+# second copy of the crate to the build.
+[target.'cfg(windows)'.dependencies]
+windows-registry = "0.6"
+windows = { version = "0.62", features = [
+  "Win32_Foundation",
+  "Win32_Storage_EnhancedStorage",
+  "Win32_Storage_FileSystem",
+  "Win32_System_Com",
+  "Win32_System_Com_StructuredStorage",
+  "Win32_System_Registry",
+  "Win32_System_Threading",
+  "Win32_System_Variant",
+  "Win32_UI_Shell",
+  "Win32_UI_Shell_PropertiesSystem",
+  "Win32_UI_WindowsAndMessaging",
+] }
+
+# Pinned to the exact version wry/tauri already vendor for this target family (see `wry`'s own
+# Cargo.toml) so this doesn't pull in a second copy of the crate - only used directly by
+# `zoom.rs` for `WebViewExt::set_zoom_level`, WebKitGTK's equivalent of the WebView2
+# `SetZoomFactor` call it makes on Windows (reached there via tauri's own re-exported
+# `webview2_com` types, so no equivalent direct Windows dependency is needed here).
+[target.'cfg(any(target_os = "linux", target_os = "dragonfly", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))'.dependencies]
+webkit2gtk = "=2.0.2"
+
+# CI runs clippy with `-D warnings` (.github/workflows/checks.yml), so anything allowed here is a
+# deliberate, crate-wide exception.
+[lints.clippy]
+# Doc comments across the crate use " - " as a dash, which clippy reads as a list item whenever it
+# wraps to the start of a line. It's prose, not a list, so the warning is noise.
+doc_lazy_continuation = "allow"
+
+[profile.dev]
+opt-level = 1
+incremental = true
+debug = 1
+split-debuginfo = "unpacked"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+strip = true
+panic = "abort"
+overflow-checks = false

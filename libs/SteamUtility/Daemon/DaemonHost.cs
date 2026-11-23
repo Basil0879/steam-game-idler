@@ -1,0 +1,400 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
+using SteamKit2;
+using SteamUtility.Core.Errors;
+using SteamUtility.Core.Logging;
+using SteamUtility.Core.Models;
+using SteamUtility.Daemon.Bot;
+using SteamUtility.Daemon.Ipc;
+
+namespace SteamUtility.Daemon
+{
+    // Persistent daemon/IPC mode entry point - the "sign in with real Steam credentials" path
+    // (SteamKit2-backed, no local Steam client needed). Instance-constructed (unlike the pre-merge
+    // SteamAgent's static Program class) for easier manual testing. Preserves the exact IPC command
+    // set and wire shapes the current Rust integration (src-tauri/src/steam_agent.rs) already
+    // depends on - the Rust/Tauri rewrite is a separate, later phase, so this phase doesn't change
+    // the protocol surface.
+    public sealed class DaemonHost
+    {
+        private static readonly JsonSerializerOptions JsonOptions = new()
+        {
+            PropertyNameCaseInsensitive = true,
+        };
+
+        private SteamBot _bot = null!;
+        private AuthFlow _authFlow = null!;
+        private IdlingManager _idlingManager = null!;
+        private PresenceManager _presenceManager = null!;
+        private AchievementHandler _achievementHandler = null!;
+        private OwnershipManager _ownershipManager = null!;
+        private FreeLicenseManager _freeLicenseManager = null!;
+        private AchievementProgressManager _achievementProgressManager = null!;
+
+        // `appIds` is everything the host asked to idle; `familyLockedAppIds` the subset Steam
+        // Families is holding back because someone else in the family is playing it (see
+        // IdlingManager) - still wanted, just not announced until it's free.
+        private void SendIdleState()
+        {
+            IpcServer.SendEvent(
+                "idle_state",
+                new
+                {
+                    appIds = _idlingManager.CurrentAppIds,
+                    familyLockedAppIds = _idlingManager.FamilyLockedAppIds,
+                }
+            );
+        }
+
+        public int Run(string[] args)
+        {
+            Log.Info("Daemon", "Starting daemon (agent) mode");
+
+            _bot = new SteamBot();
+            _authFlow = new AuthFlow(_bot);
+            _idlingManager = new IdlingManager(_bot);
+            _presenceManager = new PresenceManager(_bot);
+            _achievementHandler = new AchievementHandler();
+            _bot.Client.AddHandler(_achievementHandler);
+            _ownershipManager = new OwnershipManager();
+            _freeLicenseManager = new FreeLicenseManager();
+            _achievementProgressManager = new AchievementProgressManager();
+
+            _bot.LogOnStatusChanged += result =>
+            {
+                IpcServer.SendEvent(
+                    "status_changed",
+                    new
+                    {
+                        loggedOn = result == EResult.OK,
+                        result = result.ToString(),
+                        steamId = _bot.SteamID != null ? ((ulong)_bot.SteamID).ToString() : null,
+                    }
+                );
+            };
+            _bot.Disconnected += (willReconnect, wasKicked) =>
+            {
+                IpcServer.SendEvent(
+                    "status_changed",
+                    new
+                    {
+                        loggedOn = false,
+                        // "Reconnecting" lets the Rust host (steam_agent/process.rs) tell this
+                        // transient, self-recovering disconnect apart from a genuinely dead
+                        // session - see that file's handle_line for why the distinction matters.
+                        // "LoggedInElsewhere" is a third, distinct sentinel: the account was
+                        // terminally force-logged-off because another client of the same logon type
+                        // replaced this session (EResult.LogonSessionReplaced) - the Rust host
+                        // reacts to this one by stopping automation instead of waiting on a
+                        // reconnect that will never come. The wire name predates that narrowing
+                        // and is kept for compatibility. A kick because another session started
+                        // *playing* (EResult.LoggedInElsewhere itself) is not this case - it
+                        // reconnects, so it reports "Reconnecting" here, with the pause carried
+                        // separately by the playing_session event below.
+                        result = wasKicked
+                            ? "LoggedInElsewhere"
+                            : (willReconnect ? "Reconnecting" : "Disconnected"),
+                        steamId = (string?)null,
+                    }
+                );
+            };
+            _bot.SessionRejected += result =>
+            {
+                // Nothing can idle on a session Steam won't take back, but IdlingManager keeps its
+                // desired set across any disconnect so it can re-announce after a normal reconnect.
+                // Empty it and report that, or the host would keep showing these games as idling.
+                _idlingManager.SetGames(new List<uint>());
+                SendIdleState();
+                // Sent ahead of the status_changed pair that follows this rejection: the first of
+                // those clears the Rust host's cached SteamID64, which it needs to find and stop
+                // this account's automation - see steam_agent/process.rs's handle_line.
+                IpcServer.SendEvent("session_rejected", new { result = result.ToString() });
+            };
+            // Lets the Rust host pause/resume its own automation loops (the achievement unlocker)
+            // and show the user why nothing is idling - see SteamBot.PlayingBlocked. `appId` is the
+            // game the other session is playing, null when unknown or unblocked.
+            _bot.PlayingBlockedChanged += (blocked, appId) =>
+            {
+                IpcServer.SendEvent(
+                    "playing_session",
+                    new { blocked, appId = appId == 0 ? (uint?)null : appId }
+                );
+            };
+
+            // A Steam Families lock changes which games are actually being played without any
+            // idle_set from the host - see IdlingManager's class comment.
+            _idlingManager.FamilyLockChanged += SendIdleState;
+
+            _bot.Start();
+
+            string? line;
+            while ((line = Console.In.ReadLine()) != null)
+            {
+                if (string.IsNullOrWhiteSpace(line))
+                {
+                    continue;
+                }
+
+                var capturedLine = line;
+                _ = Task.Run(() => HandleLineAsync(capturedLine));
+            }
+
+            return 0;
+        }
+
+        private async Task HandleLineAsync(string line)
+        {
+            IpcRequest? request;
+            try
+            {
+                request = JsonSerializer.Deserialize<IpcRequest>(line, JsonOptions);
+            }
+            catch (Exception ex)
+            {
+                Log.Warn("Daemon", $"Failed to parse IPC request line: {ex.Message}");
+                IpcServer.SendResponse(null, false, error: "invalid_json");
+                return;
+            }
+
+            if (request == null)
+            {
+                IpcServer.SendResponse(null, false, error: "empty_request");
+                return;
+            }
+
+            try
+            {
+                switch (request.Cmd)
+                {
+                    case "login":
+                        // Pre-seeds PresenceManager's desired state *before* logging on, when the
+                        // caller already knows one (Rust caches a resolved SteamID64 per account
+                        // after its first successful login and, from then on, looks up the saved
+                        // presence_settings.json before ever sending this command - see
+                        // AgentManager::cached_persona_state). SetPersonaState() no-ops its actual
+                        // Steam-facing Apply() while not yet logged on, so this only primes the
+                        // field PresenceManager's own LogOnStatusChanged subscription reads once
+                        // logon succeeds - without it, that subscription's default (Online) would
+                        // be what gets broadcast first, which is exactly the brief "online" flash
+                        // this pre-seeding exists to prevent for a user who wants Invisible/Offline.
+                        TryApplyInitialPersonaState(request.PersonaState);
+                        await _authFlow.LoginWithCredentialsAsync(
+                            request.Id,
+                            request.User ?? "",
+                            request.PassB64 ?? ""
+                        );
+                        break;
+
+                    case "begin_qr_login":
+                        await _authFlow.LoginWithQrAsync(request.Id);
+                        break;
+
+                    case "login_with_token":
+                    {
+                        // See the "login" case above - same pre-seeding, same reasoning. This is
+                        // the path that matters most in practice: it's what every app launch uses
+                        // to resume an already-linked account.
+                        TryApplyInitialPersonaState(request.PersonaState);
+                        var success = await _authFlow.LoginWithRefreshTokenAsync(
+                            request.User ?? "",
+                            request.RefreshTokenB64 ?? ""
+                        );
+                        if (success)
+                        {
+                            IpcServer.SendResponse(request.Id, true);
+                        }
+                        else
+                        {
+                            IpcServer.SendResponse(
+                                request.Id,
+                                false,
+                                error: "refresh_token_invalid"
+                            );
+                            IpcServer.SendEvent("auth_required");
+                        }
+                        break;
+                    }
+
+                    case "submit_guard_code":
+                        _authFlow.SubmitGuardCode(request.Id, request.Code ?? "");
+                        break;
+
+                    case "logout":
+                        _bot.Stop();
+                        IpcServer.SendResponse(request.Id, true);
+                        break;
+
+                    case "get_web_session":
+                    {
+                        var session = await _authFlow.GetWebSessionAsync();
+                        IpcServer.SendResponse(request.Id, true, session);
+                        break;
+                    }
+
+                    case "idle_set":
+                    {
+                        var appIds = request.AppIds ?? new List<uint>();
+                        _idlingManager.SetGames(appIds, request.GameExtraInfo);
+                        IpcServer.SendResponse(request.Id, true);
+                        SendIdleState();
+                        break;
+                    }
+
+                    case "set_persona_state":
+                    {
+                        if (
+                            !Enum.TryParse<EPersonaState>(
+                                request.PersonaState,
+                                ignoreCase: true,
+                                out var state
+                            )
+                        )
+                        {
+                            IpcServer.SendResponse(request.Id, false, error: "invalid_persona_state");
+                            break;
+                        }
+                        _presenceManager.SetPersonaState(state);
+                        IpcServer.SendResponse(request.Id, true);
+                        break;
+                    }
+
+                    case "get_owned_apps":
+                    {
+                        var games = await _ownershipManager.GetOwnedGamesAsync(
+                            _bot,
+                            request.GamesOnly ?? false,
+                            request.Language ?? "english"
+                        );
+                        IpcServer.SendResponse(request.Id, true, new { games });
+                        break;
+                    }
+
+                    case "achievements_progress":
+                    {
+                        var progress = await _achievementProgressManager.GetProgressAsync(
+                            _bot,
+                            request.AppIds ?? new List<uint>()
+                        );
+                        IpcServer.SendResponse(request.Id, true, new { progress });
+                        break;
+                    }
+
+                    case "request_free_license":
+                    {
+                        var appId = request.AppId ?? throw new InvalidAppIdException();
+                        var result = await _freeLicenseManager.RequestFreeLicenseAsync(_bot, appId);
+                        IpcServer.SendResponse(request.Id, true, result);
+                        break;
+                    }
+
+                    case "achievements_get":
+                    {
+                        var steamId = RequireSteamId();
+                        var (achievements, stats, parsedGroups) =
+                            await _achievementHandler.GetAchievementsAndStatsAsync(
+                                request.AppId ?? 0,
+                                steamId,
+                                request.Language ?? "english"
+                            );
+                        var groups = await _ownershipManager.ApplyDlcOwnershipAsync(
+                            _bot,
+                            parsedGroups
+                        );
+                        IpcServer.SendResponse(
+                            request.Id,
+                            true,
+                            new
+                            {
+                                achievements,
+                                stats,
+                                groups,
+                            }
+                        );
+                        break;
+                    }
+
+                    case "achievement_set":
+                    {
+                        var steamId = RequireSteamId();
+                        await _achievementHandler.SetAchievementAsync(
+                            request.AppId ?? 0,
+                            steamId,
+                            request.AchievementId ?? "",
+                            request.Unlock ?? false
+                        );
+                        IpcServer.SendResponse(request.Id, true, new { success = true });
+                        break;
+                    }
+
+                    case "achievement_set_bulk":
+                    {
+                        var steamId = RequireSteamId();
+                        var changes = (request.AchievementChanges ?? new List<AchievementChangeRequest>())
+                            .Select(c => (c.Id, c.Unlock))
+                            .ToList();
+                        var (succeeded, failed) = await _achievementHandler.SetAchievementsBulkAsync(
+                            request.AppId ?? 0,
+                            steamId,
+                            changes
+                        );
+                        IpcServer.SendResponse(request.Id, true, new { succeeded, failed });
+                        break;
+                    }
+
+                    case "stats_update":
+                    {
+                        var steamId = RequireSteamId();
+                        await _achievementHandler.UpdateStatsAsync(
+                            request.AppId ?? 0,
+                            steamId,
+                            request.Stats ?? new List<StatUpdateRequest>()
+                        );
+                        IpcServer.SendResponse(request.Id, true, new { success = true });
+                        break;
+                    }
+
+                    case "stats_reset_all":
+                    {
+                        var steamId = RequireSteamId();
+                        await _achievementHandler.ResetAllStatsAsync(request.AppId ?? 0, steamId);
+                        IpcServer.SendResponse(request.Id, true, new { success = true });
+                        break;
+                    }
+
+                    default:
+                        IpcServer.SendResponse(
+                            request.Id,
+                            false,
+                            error: $"unknown_command:{request.Cmd}"
+                        );
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                var (code, _) = ExceptionMapper.Map(ex, "Daemon");
+                IpcServer.SendResponse(request.Id, false, error: code);
+            }
+        }
+
+        private SteamID RequireSteamId() => _bot.SteamID ?? throw new NotLoggedOnException();
+
+        // Best-effort, silent pre-seed used by the "login"/"login_with_token" cases above - unlike
+        // the "set_persona_state" command itself, a missing/unparsable value here is expected
+        // (Rust omits it whenever it has no cached persona state for this account yet) and must
+        // never fail or respond to the in-flight login request.
+        private void TryApplyInitialPersonaState(string? rawPersonaState)
+        {
+            if (
+                !string.IsNullOrEmpty(rawPersonaState)
+                && Enum.TryParse<EPersonaState>(rawPersonaState, ignoreCase: true, out var state)
+            )
+            {
+                _presenceManager.SetPersonaState(state);
+            }
+        }
+    }
+}

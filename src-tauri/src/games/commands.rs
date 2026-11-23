@@ -1,0 +1,199 @@
+use serde::{Deserialize, Serialize};
+use tauri::{AppHandle, State};
+
+use crate::error::AppResult;
+use crate::local_steam;
+use crate::steam_agent::AgentManager;
+
+use super::{achievement_progress, cache, merge, web_api, OwnedGame, OwnedGamesResult};
+
+/// Identifies which sign-in mode's owned-games list to fetch, and the identifier that mode needs.
+/// Agent mode resolves everything from the already-signed-in `username`'s live session (including
+/// its SteamID64, once `status_changed` has reported one - see `steam_agent::AgentManager::steam_id`).
+/// CLI mode has no persistent session of its own to resolve a SteamID64 from, so it's passed
+/// directly (the frontend already has it from `local_steam::commands::get_users`).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase",
+    tag = "mode"
+)]
+pub enum GamesAccount {
+    Agent { username: String },
+    Local { steam_id: String },
+}
+
+/// Resolves an account's SteamID64 - agent mode looks one up from its live session (only known
+/// once `status_changed` has reported one, see `AgentManager::steam_id`), local mode already has
+/// one from `loginusers.vdf` and just passes it through. Shared by every per-account feature that
+/// needs to key something by SteamID64 (owned-games cache, favorites cache, ...) rather than
+/// re-inlining this match per caller.
+pub async fn resolve_steam_id(
+    account: &GamesAccount,
+    agent_manager: &AgentManager,
+) -> AppResult<String> {
+    match account {
+        GamesAccount::Agent { username } => agent_manager.steam_id(username).await,
+        GamesAccount::Local { steam_id } => Ok(steam_id.clone()),
+    }
+}
+
+/// Frontend-facing wrapper around [`resolve_steam_id`] - needed because unlike CLI mode (whose
+/// SteamID64 the frontend already has from `local_steam::commands::get_users`), agent mode has no
+/// other way to learn its signed-in account's resolved SteamID64. First real caller: the
+/// subscription check, which needs a SteamID64 for its API request body regardless of sign-in mode.
+#[tauri::command]
+pub async fn resolve_account_steam_id(
+    agent_manager: State<'_, AgentManager>,
+    account: GamesAccount,
+) -> AppResult<String> {
+    resolve_steam_id(&account, &agent_manager).await
+}
+
+/// Fetches this account's owned games (app id + name + playtime) and caches the merged result
+/// keyed by the account's SteamID64. One command for both sign-in modes, branching internally,
+/// rather than a pair of mode-specific commands with frontend-side branching.
+///
+/// CLI mode's ownership check has no playtime source of its own, so it's merged with the Steam Web
+/// API's `GetOwnedGames` here (which also folds in any owned games outside the local backend's
+/// curated whitelist). Agent mode's ownership check (PICS-based) already comes back fully
+/// enriched with playtime from the daemon's own `Player.GetOwnedGames#1` call, so it skips the Web
+/// API entirely - see `RawOwnedGame`'s doc comment. That split is also why only CLI mode can ever
+/// report `possibly_private`: it's the only mode whose completeness still depends on the Web API,
+/// which - unlike SteamKit2's authenticated-session RPC - is subject to Steam Community
+/// profile/game-details privacy settings when not using the account's own API key.
+///
+/// The Steam Web API key override (if any) is read from the OS credential store internally rather
+/// than passed as a parameter - one less thing for every caller of this command to remember to
+/// plumb through.
+///
+/// `locale` is the frontend's own i18next locale (`i18n.language`, e.g. `"zh-CN"`), mapped to a
+/// Steam schema language key via `achievements::steam_language::steam_language_for_locale` -
+/// mirrors `get_achievement_data`'s exact same param, for the same reason. Only agent mode uses
+/// it: CLI mode resolves the local Steam client's own configured display language itself (see
+/// `SteamworksLocalBackend.ResolveLocalizedNames`'s registry read), independent of this app's locale.
+///
+/// Achievement completion counts aren't fetched inline - that would hold the whole list back on a
+/// second library-sized fetch. Each game's last known counts are carried forward from the cache
+/// instead, and a library-wide `achievement_progress` refresh is kicked off in the background once
+/// the list is written; its results arrive via `ACHIEVEMENT_PROGRESS_EVENT`. That refresh is
+/// throttled unless `refresh_achievement_progress` is set - the frontend sets it for a first load
+/// or an explicit refresh, not for the periodic auto-update poll (see
+/// `achievement_progress::LIBRARY_REFRESH_MIN_INTERVAL`).
+#[tauri::command]
+pub async fn get_owned_games(
+    app_handle: AppHandle,
+    agent_manager: State<'_, AgentManager>,
+    account: GamesAccount,
+    locale: String,
+    refresh_achievement_progress: Option<bool>,
+) -> AppResult<OwnedGamesResult> {
+    let steam_id = resolve_steam_id(&account, &agent_manager).await?;
+    let is_agent = matches!(account, GamesAccount::Agent { .. });
+    let raw_games = match &account {
+        GamesAccount::Agent { username } => {
+            // Read internally rather than make every caller plumb it through - same convention as
+            // the Steam Web API key override below.
+            let games_only = crate::steam_agent::ownership_settings::get(&app_handle, &steam_id)
+                .await?
+                .games_only;
+            let steam_language =
+                crate::achievements::steam_language::steam_language_for_locale(&locale);
+            agent_manager
+                .get_owned_apps(username, games_only, steam_language)
+                .await?
+        }
+        GamesAccount::Local { .. } => local_steam::ownership::check_ownership().await?,
+    };
+
+    // Agent mode's `raw_games` already carries playtime from the daemon's own
+    // Player.GetOwnedGames#1 enrichment (see RawOwnedGame's doc comment) - it never touches the
+    // Steam Web API, so it's never subject to the private-profile detection below either.
+    let (mut merged, possibly_private) = if is_agent {
+        (merge::from_agent(raw_games), false)
+    } else {
+        let api_key = crate::credential_store::load_web_api_key();
+        let fetch = web_api::fetch_owned_games(&steam_id, api_key).await?;
+        (merge::merge(raw_games, fetch.games), fetch.possibly_private)
+    };
+
+    // An unreadable previous cache just means nothing to carry forward - the background refresh
+    // below fills the counts in either way, so it's not worth failing the whole fetch over.
+    let previous = cache::read(&app_handle, &steam_id).unwrap_or_else(|e| {
+        tracing::warn!(steam_id, error = %e, "failed to read previous owned games cache, achievement counts start unknown");
+        Vec::new()
+    });
+    achievement_progress::carry_forward(&previous, &mut merged);
+
+    cache::write(&app_handle, &steam_id, &merged)?;
+
+    if !is_agent {
+        achievement_progress::set_privacy_blocked(&steam_id, possibly_private);
+    }
+    achievement_progress::schedule_library_refresh(
+        &app_handle,
+        &account,
+        &steam_id,
+        merged.iter().map(|game| game.app_id),
+        refresh_achievement_progress.unwrap_or(false),
+    );
+
+    tracing::info!(
+        steam_id,
+        count = merged.len(),
+        possibly_private,
+        "fetched owned games list"
+    );
+    Ok(OwnedGamesResult {
+        games: merged,
+        possibly_private,
+    })
+}
+
+/// Every app id this account owns, for the Debug tab's library-wide achievement lock/unlock -
+/// deliberately independent of `get_owned_games`'s display filtering and cache, so what gets
+/// targeted never depends on a games-list setting. Agent mode asks the daemon for every licensed
+/// app regardless of PICS type (`games_only: false`), which includes mods, tools and demos. CLI
+/// mode has no license-enumeration API at all, so it's the best available union: the local
+/// client's whitelist-based ownership check plus the Web API's `GetOwnedGames` - a mod or
+/// unlicensed-but-achievement-bearing app neither of those reports stays unreachable there.
+pub(crate) async fn all_owned_app_ids(
+    account: &GamesAccount,
+    agent_manager: &AgentManager,
+    steam_id: &str,
+) -> AppResult<Vec<u32>> {
+    let games = match account {
+        GamesAccount::Agent { username } => {
+            // Names are never shown here, so the schema language is irrelevant.
+            let raw = agent_manager
+                .get_owned_apps(username, false, "english")
+                .await?;
+            merge::from_agent(raw)
+        }
+        GamesAccount::Local { .. } => {
+            let raw = local_steam::ownership::check_ownership().await?;
+            let api_key = crate::credential_store::load_web_api_key();
+            let fetch = web_api::fetch_owned_games(steam_id, api_key).await?;
+            merge::merge(raw, fetch.games)
+        }
+    };
+    Ok(games.into_iter().map(|game| game.app_id).collect())
+}
+
+/// Reads back the last cached owned-games list for `steam_id` without hitting the network - an
+/// empty list if nothing has been cached yet (not an error, same convention `get_user_summary_cache`
+/// already uses).
+#[tauri::command]
+pub fn get_owned_games_cache(app_handle: AppHandle, steam_id: String) -> AppResult<Vec<OwnedGame>> {
+    cache::read(&app_handle, &steam_id)
+}
+
+#[tauri::command]
+pub fn delete_owned_games_cache(app_handle: AppHandle, steam_id: String) -> AppResult<()> {
+    let result = cache::delete(&app_handle, &steam_id);
+    match &result {
+        Ok(()) => tracing::info!(steam_id, "deleted owned games cache"),
+        Err(e) => tracing::warn!(steam_id, error = %e, "failed to delete owned games cache"),
+    }
+    result
+}

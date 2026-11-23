@@ -1,0 +1,62 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# Visual Studio
+.vs
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# testing
+/coverage
+/test-results
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+Thumbs.db
+desktop.ini
+*.pem
+
+# agents
+/.claude/
+/.agents/
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# tauri
+src-tauri/target
+src-tauri/libs
+src-tauri/gen
+.window-state.json
+
+# rust-analyzer
+target
+
+# Ad hoc CDP testing scripts (scratch WebSocket-driving scripts written per session) stay untracked.
+*.ps1
+
+# Local version-policy test file (see src/shared/utils/versionPolicy.ts) - never commit, the real
+# version-policy.json on main is live for every user.
+public/version-policy.dev.json
